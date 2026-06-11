@@ -1,0 +1,18 @@
+{
+  "$jsonSchema": {
+    "bsonType": "object",
+    "title": "pedidos",
+    "required": [
+      "id_pedido", "id_cliente", "data_pedido", "status", "valor_total", "updated_at"
+    ],
+    "properties": {
+      "id_pedido": { "bsonType": ["int", "long"], "description": "Identificador único" },
+      "id_cliente": { "bsonType": ["int", "long"], "description": "Referência -> clientes.id_cliente" },
+      "data_pedido": { "bsonType": "date" },
+      "status": { "enum": ["pendente", "processando", "enviado", "entregue", "cancelado"] },
+      "valor_total": { "bsonType": ["double", "int", "long"] },
+      "id_cupom": { "bsonType": ["int", "long", "null"], "description": "Referência -> cupons.id_cupom (nulo quando sem cupom)" },
+      "updated_at": { "bsonType": "date", "description": "Controle de carga incremental" }
+    }
+  }
+}

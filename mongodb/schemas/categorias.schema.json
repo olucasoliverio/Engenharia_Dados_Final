@@ -1,0 +1,13 @@
+{
+  "$jsonSchema": {
+    "bsonType": "object",
+    "title": "categorias",
+    "required": ["id_categoria", "nome_categoria", "descricao", "updated_at"],
+    "properties": {
+      "id_categoria": { "bsonType": ["int", "long"], "description": "Identificador único" },
+      "nome_categoria": { "bsonType": "string" },
+      "descricao": { "bsonType": "string" },
+      "updated_at": { "bsonType": "date", "description": "Controle de carga incremental" }
+    }
+  }
+}

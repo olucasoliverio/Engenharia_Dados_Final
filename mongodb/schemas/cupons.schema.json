@@ -1,0 +1,19 @@
+{
+  "$jsonSchema": {
+    "bsonType": "object",
+    "title": "cupons",
+    "required": [
+      "id_cupom", "codigo", "desconto_percentual", "valor_minimo",
+      "data_validade", "ativo", "updated_at"
+    ],
+    "properties": {
+      "id_cupom": { "bsonType": ["int", "long"], "description": "Identificador único" },
+      "codigo": { "bsonType": "string", "description": "Código único do cupom" },
+      "desconto_percentual": { "bsonType": ["int", "long"] },
+      "valor_minimo": { "bsonType": ["int", "long"] },
+      "data_validade": { "bsonType": "date" },
+      "ativo": { "bsonType": "bool" },
+      "updated_at": { "bsonType": "date", "description": "Controle de carga incremental" }
+    }
+  }
+}

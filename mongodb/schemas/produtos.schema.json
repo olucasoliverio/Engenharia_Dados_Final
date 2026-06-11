@@ -1,0 +1,22 @@
+{
+  "$jsonSchema": {
+    "bsonType": "object",
+    "title": "produtos",
+    "required": [
+      "id_produto", "nome_produto", "descricao", "preco", "estoque",
+      "id_categoria", "id_fornecedor", "marca", "peso_kg", "updated_at"
+    ],
+    "properties": {
+      "id_produto": { "bsonType": ["int", "long"], "description": "Identificador único" },
+      "nome_produto": { "bsonType": "string" },
+      "descricao": { "bsonType": "string" },
+      "preco": { "bsonType": ["double", "int", "long"] },
+      "estoque": { "bsonType": ["int", "long"] },
+      "id_categoria": { "bsonType": ["int", "long"], "description": "Referência -> categorias.id_categoria" },
+      "id_fornecedor": { "bsonType": ["int", "long"], "description": "Referência -> fornecedores.id_fornecedor" },
+      "marca": { "bsonType": "string" },
+      "peso_kg": { "bsonType": ["double", "int", "long"] },
+      "updated_at": { "bsonType": "date", "description": "Controle de carga incremental" }
+    }
+  }
+}
