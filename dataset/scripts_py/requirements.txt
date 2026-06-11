@@ -1,0 +1,3 @@
+# Dependencia do script de carga (carregar_mongo.py).
+# O .env e o CSV sao lidos com a stdlib, entao so o driver e necessario.
+pymongo>=4.6,<5
