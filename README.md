@@ -44,5 +44,32 @@ docker compose down        # para o container (mantém os dados no volume)
 docker compose down -v     # para e APAGA os dados (remove o volume)
 ```
 
-> A população das coleções com os dados simulados é feita por um script
-> separado (issue #9).
+## Popular o banco com os dados simulados
+
+Os dados simulados estão em `dataset/arquivos_csv/` (gerados pelos scripts
+`dataset/scripts_py/gerar_*.py`). O script `carregar_mongo.py` lê esses CSVs,
+converte os tipos (datas viram `ISODate`, números viram int/float, campos vazios
+viram `null`), cria as 10 coleções com os validadores `$jsonSchema` de
+`mongodb/schemas/` e os índices (chave primária, chaves estrangeiras e
+`updated_at`).
+
+```bash
+# com o container de pé (docker compose up -d) e o .env configurado:
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r dataset/scripts_py/requirements.txt
+
+python dataset/scripts_py/carregar_mongo.py
+```
+
+Opções úteis:
+
+```bash
+python dataset/scripts_py/carregar_mongo.py --only pedidos   # uma coleção só
+python dataset/scripts_py/carregar_mongo.py --no-validator   # sem $jsonSchema
+python dataset/scripts_py/carregar_mongo.py --uri "<MONGO_URI>" --db ecommerce
+```
+
+A conexão é resolvida por `MONGO_URI` / `MONGO_DB` (CLI > variável de ambiente >
+`.env` > default local). O script é idempotente: recria cada coleção a cada
+execução.
