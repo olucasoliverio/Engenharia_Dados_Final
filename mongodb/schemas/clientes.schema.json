@@ -1,0 +1,25 @@
+{
+  "$jsonSchema": {
+    "bsonType": "object",
+    "title": "clientes",
+    "required": [
+      "id_cliente", "nome", "email", "cpf", "telefone", "data_nascimento",
+      "genero", "logradouro", "cidade", "estado", "cep", "data_cadastro", "updated_at"
+    ],
+    "properties": {
+      "id_cliente": { "bsonType": ["int", "long"], "description": "Identificador único" },
+      "nome": { "bsonType": "string" },
+      "email": { "bsonType": "string" },
+      "cpf": { "bsonType": "string" },
+      "telefone": { "bsonType": "string" },
+      "data_nascimento": { "bsonType": "date" },
+      "genero": { "enum": ["M", "F", "Outro"] },
+      "logradouro": { "bsonType": "string" },
+      "cidade": { "bsonType": "string" },
+      "estado": { "bsonType": "string", "minLength": 2, "maxLength": 2 },
+      "cep": { "bsonType": "string" },
+      "data_cadastro": { "bsonType": "date" },
+      "updated_at": { "bsonType": "date", "description": "Controle de carga incremental" }
+    }
+  }
+}

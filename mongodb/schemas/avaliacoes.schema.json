@@ -1,0 +1,20 @@
+{
+  "$jsonSchema": {
+    "bsonType": "object",
+    "title": "avaliacoes",
+    "required": [
+      "id_avaliacao", "id_pedido", "id_cliente", "id_produto",
+      "nota", "comentario", "data_avaliacao", "updated_at"
+    ],
+    "properties": {
+      "id_avaliacao": { "bsonType": ["int", "long"], "description": "Identificador único" },
+      "id_pedido": { "bsonType": ["int", "long"], "description": "Referência -> pedidos.id_pedido" },
+      "id_cliente": { "bsonType": ["int", "long"], "description": "Referência -> clientes.id_cliente" },
+      "id_produto": { "bsonType": ["int", "long"], "description": "Referência -> produtos.id_produto" },
+      "nota": { "bsonType": ["int", "long"], "minimum": 1, "maximum": 5 },
+      "comentario": { "bsonType": "string" },
+      "data_avaliacao": { "bsonType": "date" },
+      "updated_at": { "bsonType": "date", "description": "Controle de carga incremental" }
+    }
+  }
+}

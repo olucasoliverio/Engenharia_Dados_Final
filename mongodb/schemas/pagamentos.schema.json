@@ -1,0 +1,20 @@
+{
+  "$jsonSchema": {
+    "bsonType": "object",
+    "title": "pagamentos",
+    "required": [
+      "id_pagamento", "id_pedido", "forma_pagamento", "status_pagamento",
+      "valor", "data_pagamento", "parcelas", "updated_at"
+    ],
+    "properties": {
+      "id_pagamento": { "bsonType": ["int", "long"], "description": "Identificador único" },
+      "id_pedido": { "bsonType": ["int", "long"], "description": "Referência -> pedidos.id_pedido" },
+      "forma_pagamento": { "enum": ["cartao_credito", "cartao_debito", "pix", "boleto"] },
+      "status_pagamento": { "enum": ["aprovado", "pendente", "recusado", "estornado"] },
+      "valor": { "bsonType": ["double", "int", "long"] },
+      "data_pagamento": { "bsonType": "date" },
+      "parcelas": { "bsonType": ["int", "long"], "minimum": 1, "maximum": 12 },
+      "updated_at": { "bsonType": "date", "description": "Controle de carga incremental" }
+    }
+  }
+}

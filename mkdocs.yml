@@ -1,1 +1,5 @@
-site_name: My Docs
+site_name: Engenharia de Dados — Projeto Final
+
+nav:
+  - Início: index.md
+  - Modelo MongoDB (origem): modelo_mongodb.md

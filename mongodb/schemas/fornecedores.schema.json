@@ -1,0 +1,22 @@
+{
+  "$jsonSchema": {
+    "bsonType": "object",
+    "title": "fornecedores",
+    "required": [
+      "id_fornecedor", "nome_fornecedor", "cnpj", "email", "telefone",
+      "logradouro", "cidade", "estado", "cep", "updated_at"
+    ],
+    "properties": {
+      "id_fornecedor": { "bsonType": ["int", "long"], "description": "Identificador único" },
+      "nome_fornecedor": { "bsonType": "string" },
+      "cnpj": { "bsonType": "string" },
+      "email": { "bsonType": "string" },
+      "telefone": { "bsonType": "string" },
+      "logradouro": { "bsonType": "string" },
+      "cidade": { "bsonType": "string" },
+      "estado": { "bsonType": "string", "minLength": 2, "maxLength": 2 },
+      "cep": { "bsonType": "string" },
+      "updated_at": { "bsonType": "date", "description": "Controle de carga incremental" }
+    }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "$jsonSchema": {
+    "bsonType": "object",
+    "title": "entregas",
+    "required": [
+      "id_entrega", "id_pedido", "status_entrega", "data_envio",
+      "data_entrega_prevista", "transportadora", "codigo_rastreio", "updated_at"
+    ],
+    "properties": {
+      "id_entrega": { "bsonType": ["int", "long"], "description": "Identificador único" },
+      "id_pedido": { "bsonType": ["int", "long"], "description": "Referência -> pedidos.id_pedido" },
+      "status_entrega": { "enum": ["pendente", "em_transito", "entregue", "devolvido"] },
+      "data_envio": { "bsonType": "date" },
+      "data_entrega_prevista": { "bsonType": "date" },
+      "data_entrega_real": { "bsonType": ["date", "null"], "description": "Nulo quando ainda não entregue" },
+      "transportadora": { "enum": ["Correios", "JadLog", "Total Express", "Loggi", "Azul Cargo", "Latam Cargo", "DHL", "FedEx"] },
+      "codigo_rastreio": { "bsonType": "string" },
+      "updated_at": { "bsonType": "date", "description": "Controle de carga incremental" }
+    }
+  }
+}
