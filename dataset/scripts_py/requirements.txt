@@ -1,3 +1,5 @@
-# Dependencia do script de carga (carregar_mongo.py).
-# O .env e o CSV sao lidos com a stdlib, entao so o driver e necessario.
+# Dependencias do script de carga (carregar_mongo.py).
+# O .env e o CSV sao lidos com a stdlib; so o driver e necessario.
 pymongo>=4.6,<5
+# Necessario para conexoes "mongodb+srv://" (MongoDB Atlas).
+dnspython>=2.0

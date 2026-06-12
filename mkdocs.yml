@@ -3,3 +3,4 @@ site_name: Engenharia de Dados — Projeto Final
 nav:
   - Início: index.md
   - Modelo MongoDB (origem): modelo_mongodb.md
+  - MongoDB Atlas (compartilhado): mongodb_atlas.md

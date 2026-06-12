@@ -73,3 +73,11 @@ python dataset/scripts_py/carregar_mongo.py --uri "<MONGO_URI>" --db ecommerce
 A conexão é resolvida por `MONGO_URI` / `MONGO_DB` (CLI > variável de ambiente >
 `.env` > default local). O script é idempotente: recria cada coleção a cada
 execução.
+
+## MongoDB compartilhado (Atlas)
+
+Para o time acessar a mesma origem, a base também roda em um cluster gratuito no
+MongoDB Atlas. O mesmo `carregar_mongo.py` é usado — muda apenas o `MONGO_URI`
+no `.env` (conexão `mongodb+srv://`, que requer o `dnspython` do
+`requirements.txt`). Passo a passo completo em
+[`docs/mongodb_atlas.md`](docs/mongodb_atlas.md).
