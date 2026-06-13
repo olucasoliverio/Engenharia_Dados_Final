@@ -19,5 +19,7 @@ flowchart LR
 
 - [Modelo MongoDB](modelo_mongodb.md): coleções, tipos e relacionamentos.
 - [MongoDB Atlas](mongodb_atlas.md): configuração da origem compartilhada.
+- [Estrutura Landing](estrutura_landing.md): MinIO, bucket, prefixos e
+  validação.
 - [DAG MongoDB → Landing](dag_mongodb_landing.md): ingestão incremental,
   checkpoints e formato dos arquivos.

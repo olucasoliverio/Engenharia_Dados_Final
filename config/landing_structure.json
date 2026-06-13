@@ -1,0 +1,17 @@
+{
+  "bucket": "datalake",
+  "database": "ecommerce",
+  "layer": "landing",
+  "collections": [
+    "clientes",
+    "categorias",
+    "fornecedores",
+    "produtos",
+    "cupons",
+    "pedidos",
+    "itens_pedido",
+    "pagamentos",
+    "entregas",
+    "avaliacoes"
+  ]
+}
