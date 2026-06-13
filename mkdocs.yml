@@ -6,4 +6,5 @@ nav:
   - MongoDB Atlas (compartilhado): mongodb_atlas.md
   - Estrutura Landing: estrutura_landing.md
   - Estrutura Bronze: estrutura_bronze.md
+  - Estrutura Silver: estrutura_silver.md
   - DAG MongoDB para Landing: dag_mongodb_landing.md

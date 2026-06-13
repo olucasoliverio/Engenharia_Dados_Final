@@ -1,4 +1,4 @@
-"""Create and validate the Bronze Delta structure in MinIO or Amazon S3."""
+"""Create and validate the Silver Delta structure in MinIO or Amazon S3."""
 
 from __future__ import annotations
 
@@ -20,32 +20,32 @@ except ModuleNotFoundError:
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 REPO_ROOT = SCRIPT_DIR.parent
-DEFAULT_CONFIG_PATH = REPO_ROOT / "config" / "bronze_structure.json"
-BronzeConfig = delta_structure.DeltaLayerConfig
+DEFAULT_CONFIG_PATH = REPO_ROOT / "config" / "silver_structure.json"
+SilverConfig = delta_structure.DeltaLayerConfig
 build_structure_manifest = delta_structure.build_structure_manifest
 delta_log_prefix = delta_structure.delta_log_prefix
 structure_manifest_key = delta_structure.structure_manifest_key
 table_marker_key = delta_structure.table_marker_key
 
 
-def load_config(path: Path) -> BronzeConfig:
-    """Load and validate the versioned Bronze contract."""
+def load_config(path: Path) -> SilverConfig:
+    """Load and validate the versioned Silver contract."""
     return delta_structure.load_delta_config(
         path,
-        expected_layer="bronze",
-        source_layer="landing",
-        source_format="mongodb_extended_json_canonical_lines",
+        expected_layer="silver",
+        source_layer="bronze",
+        source_format="delta",
     )
 
 
-def initialize_bronze(
+def initialize_silver(
     s3_client: Any,
-    config: BronzeConfig,
+    config: SilverConfig,
     region: str = "us-east-1",
     enable_versioning: bool = True,
     generated_at: datetime | None = None,
 ) -> dict[str, Any]:
-    """Idempotently create the Bronze prefixes and structure manifest."""
+    """Idempotently create the Silver prefixes and structure manifest."""
     return delta_structure.initialize_delta_layer(
         s3_client,
         config,
@@ -55,20 +55,20 @@ def initialize_bronze(
     )
 
 
-def validate_bronze(s3_client: Any, config: BronzeConfig) -> list[str]:
+def validate_silver(s3_client: Any, config: SilverConfig) -> list[str]:
     """Return invalid required objects; an empty list means valid structure."""
     return delta_structure.validate_delta_layer(s3_client, config)
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Cria e valida a estrutura Bronze Delta no MinIO ou S3."
+        description="Cria e valida a estrutura Silver Delta no MinIO ou S3."
     )
     parser.add_argument(
         "--config",
         type=Path,
         default=DEFAULT_CONFIG_PATH,
-        help="Contrato JSON da Bronze.",
+        help="Contrato JSON da Silver.",
     )
     parser.add_argument(
         "--endpoint-url",
@@ -100,7 +100,7 @@ def main() -> int:
         client = build_s3_client(args.endpoint_url, args.region)
 
         if not args.validate_only:
-            result = initialize_bronze(
+            result = initialize_silver(
                 client,
                 config,
                 region=args.region,
@@ -117,14 +117,14 @@ def main() -> int:
                 f"{'sim' if result['manifest_updated'] else 'nao'}"
             )
 
-        invalid = validate_bronze(client, config)
+        invalid = validate_silver(client, config)
         if invalid:
-            print("Estrutura Bronze incompleta ou divergente:")
+            print("Estrutura Silver incompleta ou divergente:")
             for path in invalid:
                 print(f"  - {path}")
             return 1
 
-        print(f"Estrutura Bronze valida: s3://{config.bucket}/{config.layer}/")
+        print(f"Estrutura Silver valida: s3://{config.bucket}/{config.layer}/")
         return 0
     except (OSError, ValueError, json.JSONDecodeError) as error:
         print(f"Erro de configuracao: {error}")

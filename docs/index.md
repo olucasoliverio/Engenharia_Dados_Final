@@ -23,5 +23,7 @@ flowchart LR
   validação.
 - [Estrutura Bronze](estrutura_bronze.md): contrato das tabelas Delta,
   prefixos e validação.
+- [Estrutura Silver](estrutura_silver.md): contrato das tabelas limpas,
+  prefixos e validação.
 - [DAG MongoDB → Landing](dag_mongodb_landing.md): ingestão incremental,
   checkpoints e formato dos arquivos.

@@ -1,0 +1,18 @@
+{
+  "bucket": "datalake",
+  "database": "ecommerce",
+  "layer": "silver",
+  "tables": [
+    "clientes",
+    "categorias",
+    "fornecedores",
+    "produtos",
+    "cupons",
+    "pedidos",
+    "itens_pedido",
+    "pagamentos",
+    "entregas",
+    "avaliacoes"
+  ],
+  "partition_columns": []
+}
