@@ -81,3 +81,29 @@ MongoDB Atlas. O mesmo `carregar_mongo.py` é usado — muda apenas o `MONGO_URI
 no `.env` (conexão `mongodb+srv://`, que requer o `dnspython` do
 `requirements.txt`). Passo a passo completo em
 [`docs/mongodb_atlas.md`](docs/mongodb_atlas.md).
+
+## DAG MongoDB Atlas → Landing
+
+A DAG [`mongodb_to_landing`](dags/mongodb_to_landing.py) extrai as dez coleções
+do MongoDB Atlas para o object storage configurado no Airflow. A primeira
+execução realiza uma carga completa; as seguintes usam checkpoints por coleção
+baseados em `updated_at`.
+
+Os documentos são gravados como MongoDB Extended JSON Lines, sem enriquecimento
+ou alteração dos dados da origem:
+
+```text
+landing/ecommerce/<colecao>/extraction_date=AAAA-MM-DD/
+  run_id=<airflow_run_id>/part-00000.json
+```
+
+Configuração das Connections, variáveis, execução e evidências estão
+documentadas em
+[`docs/dag_mongodb_landing.md`](docs/dag_mongodb_landing.md).
+
+Testes unitários da lógica de ingestão:
+
+```bash
+PYTHONPYCACHEPREFIX=/tmp/engenharia_dados_pycache \
+  python3 -m unittest discover -s tests -v
+```
