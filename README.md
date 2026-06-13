@@ -160,3 +160,24 @@ O `_delta_log` e os arquivos Parquet serão criados pela primeira gravação da
 DAG Landing → Bronze. O contrato está em
 [`config/bronze_structure.json`](config/bronze_structure.json), com detalhes em
 [`docs/estrutura_bronze.md`](docs/estrutura_bronze.md).
+
+## Estrutura da camada Silver
+
+A camada Silver reserva os prefixos das dez tabelas limpas e padronizadas:
+
+```bash
+python scripts/criar_estrutura_silver.py
+python scripts/criar_estrutura_silver.py --validate-only
+```
+
+Estrutura preparada:
+
+```text
+silver/ecommerce/<tabela>/_READY
+silver/_control/_structure.json
+```
+
+A DAG Bronze → Silver criará os arquivos Delta e aplicará as regras de
+qualidade. O contrato está em
+[`config/silver_structure.json`](config/silver_structure.json), com detalhes em
+[`docs/estrutura_silver.md`](docs/estrutura_silver.md).
