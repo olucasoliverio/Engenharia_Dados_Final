@@ -25,5 +25,7 @@ flowchart LR
   prefixos e validação.
 - [Estrutura Silver](estrutura_silver.md): contrato das tabelas limpas,
   prefixos e validação.
+- [Estrutura Gold](estrutura_gold.md): dimensões, fatos, indicadores e
+  validação.
 - [DAG MongoDB → Landing](dag_mongodb_landing.md): ingestão incremental,
   checkpoints e formato dos arquivos.

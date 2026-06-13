@@ -1,0 +1,16 @@
+{
+  "bucket": "datalake",
+  "database": "ecommerce",
+  "layer": "gold",
+  "tables": [
+    "dim_tempo",
+    "dim_cliente",
+    "dim_produto",
+    "dim_cupom",
+    "fato_vendas",
+    "fato_pagamentos",
+    "fato_entregas",
+    "fato_avaliacoes"
+  ],
+  "partition_columns": []
+}
