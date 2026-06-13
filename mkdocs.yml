@@ -4,4 +4,5 @@ nav:
   - Início: index.md
   - Modelo MongoDB (origem): modelo_mongodb.md
   - MongoDB Atlas (compartilhado): mongodb_atlas.md
+  - Estrutura Landing: estrutura_landing.md
   - DAG MongoDB para Landing: dag_mongodb_landing.md

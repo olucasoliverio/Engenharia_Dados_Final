@@ -107,3 +107,34 @@ Testes unitários da lógica de ingestão:
 PYTHONPYCACHEPREFIX=/tmp/engenharia_dados_pycache \
   python3 -m unittest discover -s tests -v
 ```
+
+## Estrutura da camada Landing
+
+O MinIO local fornece o object storage do Data Lake:
+
+```bash
+docker compose up -d minio
+docker compose ps minio
+```
+
+- API S3: <http://localhost:9000>
+- Console: <http://localhost:9001>
+
+Depois de configurar o `.env`, crie ou valide o bucket e os prefixos da Landing:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements-infra.txt
+
+set -a
+source .env
+set +a
+
+python scripts/criar_estrutura_landing.py
+python scripts/criar_estrutura_landing.py --validate-only
+```
+
+O contrato versionado está em
+[`config/landing_structure.json`](config/landing_structure.json). Detalhes em
+[`docs/estrutura_landing.md`](docs/estrutura_landing.md).
