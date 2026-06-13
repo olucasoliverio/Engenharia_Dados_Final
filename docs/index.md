@@ -1,17 +1,23 @@
-# Welcome to MkDocs
+# Engenharia de Dados — Projeto Final
 
-For full documentation visit [mkdocs.org](https://www.mkdocs.org).
+Este projeto implementa um pipeline de dados para um e-commerce fictício,
+partindo de uma origem MongoDB e seguindo a arquitetura medalhão no Data Lake.
 
-## Commands
+## Fluxo
 
-* `mkdocs new [dir-name]` - Create a new project.
-* `mkdocs serve` - Start the live-reloading docs server.
-* `mkdocs build` - Build the documentation site.
-* `mkdocs -h` - Print help message and exit.
+```mermaid
+flowchart LR
+    A[MongoDB Atlas] --> B[Apache Airflow]
+    B --> C[Landing JSON]
+    C --> D[Bronze Delta]
+    D --> E[Silver Delta]
+    E --> F[Gold dimensional]
+    F --> G[Dashboard]
+```
 
-## Project layout
+## Conteúdo disponível
 
-    mkdocs.yml    # The configuration file.
-    docs/
-        index.md  # The documentation homepage.
-        ...       # Other markdown pages, images and other files.
+- [Modelo MongoDB](modelo_mongodb.md): coleções, tipos e relacionamentos.
+- [MongoDB Atlas](mongodb_atlas.md): configuração da origem compartilhada.
+- [DAG MongoDB → Landing](dag_mongodb_landing.md): ingestão incremental,
+  checkpoints e formato dos arquivos.
