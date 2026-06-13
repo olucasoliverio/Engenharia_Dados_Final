@@ -21,5 +21,7 @@ flowchart LR
 - [MongoDB Atlas](mongodb_atlas.md): configuração da origem compartilhada.
 - [Estrutura Landing](estrutura_landing.md): MinIO, bucket, prefixos e
   validação.
+- [Estrutura Bronze](estrutura_bronze.md): contrato das tabelas Delta,
+  prefixos e validação.
 - [DAG MongoDB → Landing](dag_mongodb_landing.md): ingestão incremental,
   checkpoints e formato dos arquivos.
