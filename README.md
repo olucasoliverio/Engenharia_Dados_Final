@@ -181,3 +181,24 @@ A DAG Bronze → Silver criará os arquivos Delta e aplicará as regras de
 qualidade. O contrato está em
 [`config/silver_structure.json`](config/silver_structure.json), com detalhes em
 [`docs/estrutura_silver.md`](docs/estrutura_silver.md).
+
+## Estrutura da camada Gold
+
+A camada Gold reserva as dimensões e fatos do modelo analítico:
+
+```bash
+python scripts/criar_estrutura_gold.py
+python scripts/criar_estrutura_gold.py --validate-only
+```
+
+Estrutura preparada:
+
+```text
+gold/ecommerce/<dimensao-ou-fato>/_READY
+gold/_control/_structure.json
+```
+
+O modelo possui quatro dimensões e quatro fatos para análises de vendas,
+pagamentos, entregas e avaliações. O contrato está em
+[`config/gold_structure.json`](config/gold_structure.json), com detalhes em
+[`docs/estrutura_gold.md`](docs/estrutura_gold.md).
