@@ -138,3 +138,25 @@ python scripts/criar_estrutura_landing.py --validate-only
 O contrato versionado está em
 [`config/landing_structure.json`](config/landing_structure.json). Detalhes em
 [`docs/estrutura_landing.md`](docs/estrutura_landing.md).
+
+## Estrutura da camada Bronze
+
+A camada Bronze reserva os prefixos das dez tabelas Delta e registra o contrato
+esperado no MinIO ou Amazon S3:
+
+```bash
+python scripts/criar_estrutura_bronze.py
+python scripts/criar_estrutura_bronze.py --validate-only
+```
+
+Estrutura preparada:
+
+```text
+bronze/ecommerce/<tabela>/_READY
+bronze/_control/_structure.json
+```
+
+O `_delta_log` e os arquivos Parquet serão criados pela primeira gravação da
+DAG Landing → Bronze. O contrato está em
+[`config/bronze_structure.json`](config/bronze_structure.json), com detalhes em
+[`docs/estrutura_bronze.md`](docs/estrutura_bronze.md).

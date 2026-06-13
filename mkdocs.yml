@@ -5,4 +5,5 @@ nav:
   - Modelo MongoDB (origem): modelo_mongodb.md
   - MongoDB Atlas (compartilhado): mongodb_atlas.md
   - Estrutura Landing: estrutura_landing.md
+  - Estrutura Bronze: estrutura_bronze.md
   - DAG MongoDB para Landing: dag_mongodb_landing.md

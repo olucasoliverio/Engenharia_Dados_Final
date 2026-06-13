@@ -1,10 +1,11 @@
-"""Create and validate the Landing structure in MinIO or Amazon S3."""
+"""Create and validate the Bronze Delta structure in MinIO or Amazon S3."""
 
 from __future__ import annotations
 
 import argparse
 import json
 import os
+import re
 import sys
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -33,89 +34,110 @@ except ModuleNotFoundError:
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 REPO_ROOT = SCRIPT_DIR.parent
-DEFAULT_CONFIG_PATH = REPO_ROOT / "config" / "landing_structure.json"
+DEFAULT_CONFIG_PATH = REPO_ROOT / "config" / "bronze_structure.json"
 STRUCTURE_MANIFEST_NAME = "_structure.json"
 PREFIX_MARKER_NAME = "_READY"
+VALID_NAME = re.compile(r"^[a-z][a-z0-9_]*$")
 
 
 @dataclass(frozen=True)
-class LandingConfig:
+class BronzeConfig:
     bucket: str
     database: str
     layer: str
-    collections: tuple[str, ...]
+    tables: tuple[str, ...]
+    partition_columns: tuple[str, ...]
 
 
-def load_config(path: Path) -> LandingConfig:
-    """Load and validate the versioned Landing contract."""
+def load_config(path: Path) -> BronzeConfig:
+    """Load and validate the versioned Bronze contract."""
     payload = json.loads(path.read_text(encoding="utf-8"))
-    required_fields = {"bucket", "database", "layer", "collections"}
+    required_fields = {
+        "bucket",
+        "database",
+        "layer",
+        "tables",
+        "partition_columns",
+    }
     missing = sorted(required_fields - payload.keys())
     if missing:
         raise ValueError(f"Missing configuration fields: {', '.join(missing)}")
 
-    collections = tuple(payload["collections"])
-    if not collections:
-        raise ValueError("Landing structure must contain at least one collection")
-    if len(collections) != len(set(collections)):
-        raise ValueError("Landing structure contains duplicate collections")
-    if any(not isinstance(name, str) or not name.strip() for name in collections):
-        raise ValueError("Landing collection names must be non-empty strings")
+    tables = tuple(payload["tables"])
+    partition_columns = tuple(payload["partition_columns"])
+    _validate_names(tables, "table")
+    _validate_names(partition_columns, "partition column")
 
-    return LandingConfig(
+    layer = str(payload["layer"])
+    if layer != "bronze":
+        raise ValueError("Bronze structure layer must be 'bronze'")
+
+    return BronzeConfig(
         bucket=str(payload["bucket"]),
         database=str(payload["database"]),
-        layer=str(payload["layer"]),
-        collections=collections,
+        layer=layer,
+        tables=tables,
+        partition_columns=partition_columns,
     )
 
 
-def collection_prefix(config: LandingConfig, collection: str) -> str:
-    """Return the object prefix used by one MongoDB collection."""
-    return f"{config.layer}/{config.database}/{collection}/"
+def table_prefix(config: BronzeConfig, table: str) -> str:
+    """Return the root prefix of one Delta table."""
+    return f"{config.layer}/{config.database}/{table}/"
 
 
-def collection_marker_key(config: LandingConfig, collection: str) -> str:
-    """Return the marker object that materializes one S3 prefix."""
-    return f"{collection_prefix(config, collection)}{PREFIX_MARKER_NAME}"
+def table_marker_key(config: BronzeConfig, table: str) -> str:
+    """Return the hidden object that materializes one table prefix."""
+    return f"{table_prefix(config, table)}{PREFIX_MARKER_NAME}"
 
 
-def structure_manifest_key(config: LandingConfig) -> str:
-    """Return the control manifest object key."""
+def delta_log_prefix(config: BronzeConfig, table: str) -> str:
+    """Return the transaction log prefix created by the first Delta write."""
+    return f"{table_prefix(config, table)}_delta_log/"
+
+
+def structure_manifest_key(config: BronzeConfig) -> str:
+    """Return the Bronze control manifest object key."""
     return f"{config.layer}/_control/{STRUCTURE_MANIFEST_NAME}"
 
 
 def build_structure_manifest(
-    config: LandingConfig,
+    config: BronzeConfig,
     generated_at: datetime,
 ) -> str:
-    """Build an auditable description of the expected Landing structure."""
+    """Build an auditable description of the expected Bronze structure."""
     payload = {
         "bucket": config.bucket,
         "database": config.database,
         "layer": config.layer,
-        "format": "mongodb_extended_json_canonical_lines",
+        "format": "delta",
         "generated_at": as_utc_iso(generated_at),
-        "collections": [
+        "partition_columns": list(config.partition_columns),
+        "source": {
+            "layer": "landing",
+            "format": "mongodb_extended_json_canonical_lines",
+        },
+        "tables": [
             {
-                "name": collection,
-                "prefix": collection_prefix(config, collection),
+                "name": table,
+                "prefix": table_prefix(config, table),
+                "delta_log_prefix": delta_log_prefix(config, table),
             }
-            for collection in config.collections
+            for table in config.tables
         ],
         "control_prefix": f"{config.layer}/_control/",
     }
     return json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True)
 
 
-def initialize_landing(
+def initialize_bronze(
     s3_client: Any,
-    config: LandingConfig,
+    config: BronzeConfig,
     region: str = "us-east-1",
     enable_versioning: bool = True,
     generated_at: datetime | None = None,
 ) -> dict[str, Any]:
-    """Idempotently create the bucket, prefixes and structure manifest."""
+    """Idempotently create the Bronze prefixes and structure manifest."""
     generated_at = generated_at or datetime.now(timezone.utc)
     bucket_created = ensure_bucket(s3_client, config.bucket, region)
 
@@ -127,8 +149,8 @@ def initialize_landing(
 
     marker_keys = []
     markers_created = []
-    for collection in config.collections:
-        key = collection_marker_key(config, collection)
+    for table in config.tables:
+        key = table_marker_key(config, table)
         marker_keys.append(key)
         if not object_exists(s3_client, config.bucket, key):
             s3_client.put_object(
@@ -139,7 +161,8 @@ def initialize_landing(
                 Metadata={
                     "layer": config.layer,
                     "database": config.database,
-                    "collection": collection,
+                    "table": table,
+                    "format": "delta",
                 },
             )
             markers_created.append(key)
@@ -164,7 +187,7 @@ def initialize_landing(
         "bucket": config.bucket,
         "bucket_created": bucket_created,
         "versioning_enabled": enable_versioning,
-        "collection_count": len(config.collections),
+        "table_count": len(config.tables),
         "marker_keys": marker_keys,
         "markers_created": markers_created,
         "manifest_key": manifest_key,
@@ -172,12 +195,13 @@ def initialize_landing(
     }
 
 
-def validate_landing(s3_client: Any, config: LandingConfig) -> list[str]:
-    """Return missing required objects; an empty list means valid structure."""
-    missing = []
+def validate_bronze(s3_client: Any, config: BronzeConfig) -> list[str]:
+    """Return invalid required objects; an empty list means valid structure."""
+    invalid = []
+    manifest_key = structure_manifest_key(config)
     required_keys = [
-        *(collection_marker_key(config, name) for name in config.collections),
-        structure_manifest_key(config),
+        *(table_marker_key(config, name) for name in config.tables),
+        manifest_key,
     ]
 
     try:
@@ -190,21 +214,34 @@ def validate_landing(s3_client: Any, config: LandingConfig) -> list[str]:
             s3_client.head_object(Bucket=config.bucket, Key=key)
         except Exception as error:
             if is_missing_object_error(error):
-                missing.append(f"s3://{config.bucket}/{key}")
+                invalid.append(f"s3://{config.bucket}/{key}")
             else:
                 raise
-    return missing
+
+    if manifest_key not in {
+        path.removeprefix(f"s3://{config.bucket}/") for path in invalid
+    }:
+        expected = build_structure_manifest(config, datetime.now(timezone.utc))
+        if not manifest_matches(
+            s3_client,
+            config.bucket,
+            manifest_key,
+            expected,
+        ):
+            invalid.append(f"s3://{config.bucket}/{manifest_key} (divergente)")
+
+    return invalid
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Cria e valida a estrutura Landing no MinIO ou Amazon S3."
+        description="Cria e valida a estrutura Bronze Delta no MinIO ou S3."
     )
     parser.add_argument(
         "--config",
         type=Path,
         default=DEFAULT_CONFIG_PATH,
-        help="Contrato JSON da Landing.",
+        help="Contrato JSON da Bronze.",
     )
     parser.add_argument(
         "--endpoint-url",
@@ -236,7 +273,7 @@ def main() -> int:
         client = build_s3_client(args.endpoint_url, args.region)
 
         if not args.validate_only:
-            result = initialize_landing(
+            result = initialize_bronze(
                 client,
                 config,
                 region=args.region,
@@ -244,18 +281,23 @@ def main() -> int:
             )
             print(
                 "Estrutura criada/atualizada: "
-                f"{result['collection_count']} colecoes em "
+                f"{result['table_count']} tabelas em "
                 f"s3://{result['bucket']}/{config.layer}/"
             )
+            print(
+                f"Marcadores criados: {len(result['markers_created'])}; "
+                "manifesto atualizado: "
+                f"{'sim' if result['manifest_updated'] else 'nao'}"
+            )
 
-        missing = validate_landing(client, config)
-        if missing:
-            print("Estrutura Landing incompleta:")
-            for path in missing:
+        invalid = validate_bronze(client, config)
+        if invalid:
+            print("Estrutura Bronze incompleta ou divergente:")
+            for path in invalid:
                 print(f"  - {path}")
             return 1
 
-        print(f"Estrutura Landing valida: s3://{config.bucket}/{config.layer}/")
+        print(f"Estrutura Bronze valida: s3://{config.bucket}/{config.layer}/")
         return 0
     except (OSError, ValueError, json.JSONDecodeError) as error:
         print(f"Erro de configuracao: {error}")
@@ -263,6 +305,19 @@ def main() -> int:
     except Exception as error:
         print(f"Erro ao acessar o object storage: {error}")
         return 1
+
+
+def _validate_names(names: tuple[str, ...], field: str) -> None:
+    if not names:
+        raise ValueError(f"Bronze structure must contain at least one {field}")
+    if len(names) != len(set(names)):
+        raise ValueError(f"Bronze structure contains duplicate {field}s")
+    if any(
+        not isinstance(name, str) or not VALID_NAME.fullmatch(name) for name in names
+    ):
+        raise ValueError(
+            f"Bronze {field} names must use lowercase letters, numbers and underscores"
+        )
 
 
 if __name__ == "__main__":
