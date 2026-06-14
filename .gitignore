@@ -11,5 +11,9 @@ venv/
 env/
 .ipynb_checkpoints/
 
+# Airflow local
+airflow/logs/
+airflow/config/airflow.cfg
+
 # Sistema
 .DS_Store
