@@ -35,3 +35,5 @@ flowchart LR
   idempotência e auditoria.
 - [DAG Bronze → Silver](dag_bronze_silver.md): limpeza, tipagem, deduplicação,
   qualidade e `MERGE` Delta.
+- [DAG Silver → Gold](dag_silver_gold.md): modelo dimensional, medidas de
+  negócio e sincronização das tabelas analíticas.

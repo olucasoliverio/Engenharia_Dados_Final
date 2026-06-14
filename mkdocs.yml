@@ -12,3 +12,4 @@ nav:
   - DAG MongoDB para Landing: dag_mongodb_landing.md
   - DAG Landing para Bronze: dag_landing_bronze.md
   - DAG Bronze para Silver: dag_bronze_silver.md
+  - DAG Silver para Gold: dag_silver_gold.md

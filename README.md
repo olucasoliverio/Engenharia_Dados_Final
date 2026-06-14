@@ -271,3 +271,21 @@ O modelo possui quatro dimensões e quatro fatos para análises de vendas,
 pagamentos, entregas e avaliações. O contrato está em
 [`config/gold_structure.json`](config/gold_structure.json), com detalhes em
 [`docs/estrutura_gold.md`](docs/estrutura_gold.md).
+
+## DAG Silver → Gold
+
+A DAG `silver_to_gold` materializa o modelo dimensional analítico a partir das
+dez tabelas Silver:
+
+```text
+silver/ecommerce/<tabela>/
+  → dimensões de tempo, cliente, produto e cupom
+  → fatos de vendas, pagamentos, entregas e avaliações
+  → gold/ecommerce/<dimensao-ou-fato>/_delta_log/
+```
+
+O job enriquece produtos com categoria e fornecedor, calcula medidas de
+receita, pagamentos aprovados, prazo e atraso de entregas e classificação das
+avaliações. As tabelas fato são particionadas por ano e sincronizadas por
+`MERGE`, sem duplicar dados em novas execuções. Configuração completa em
+[`docs/dag_silver_gold.md`](docs/dag_silver_gold.md).
