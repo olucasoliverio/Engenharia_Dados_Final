@@ -33,3 +33,5 @@ flowchart LR
   checkpoints e formato dos arquivos.
 - [DAG Landing → Bronze](dag_landing_bronze.md): conversão PySpark para Delta,
   idempotência e auditoria.
+- [DAG Bronze → Silver](dag_bronze_silver.md): limpeza, tipagem, deduplicação,
+  qualidade e `MERGE` Delta.

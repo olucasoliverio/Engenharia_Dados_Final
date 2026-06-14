@@ -111,8 +111,10 @@ silver/ecommerce/<tabela>/_delta_log/
 silver/ecommerce/<tabela>/*.parquet
 ```
 
-É responsabilidade dessa DAG aplicar deduplicação, tratamento de nulos,
-padronização de tipos, formatação de datas e validações de qualidade.
+A DAG `bronze_to_silver` aplica deduplicação, tratamento de nulos,
+padronização de tipos, formatação de datas e validações de qualidade. A
+implementação está documentada em
+[`dag_bronze_silver.md`](dag_bronze_silver.md).
 
 ## Validação
 
@@ -153,5 +155,5 @@ compartilhado para estruturas Delta.
 ## Limites desta issue
 
 Esta entrega prepara e valida o armazenamento da Silver. A leitura da Bronze,
-as regras de qualidade e a gravação física das tabelas Delta pertencem à
-Issue #17.
+as regras de qualidade e a gravação física das tabelas Delta são implementadas
+separadamente pela Issue #17.

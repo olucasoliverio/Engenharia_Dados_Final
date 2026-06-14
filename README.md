@@ -229,10 +229,27 @@ silver/ecommerce/<tabela>/_READY
 silver/_control/_structure.json
 ```
 
-A DAG Bronze → Silver criará os arquivos Delta e aplicará as regras de
+A DAG Bronze → Silver cria os arquivos Delta e aplica as regras de
 qualidade. O contrato está em
 [`config/silver_structure.json`](config/silver_structure.json), com detalhes em
 [`docs/estrutura_silver.md`](docs/estrutura_silver.md).
+
+## DAG Bronze → Silver
+
+A DAG `bronze_to_silver` transforma o MongoDB Extended JSON preservado na
+Bronze em dez tabelas Delta tipadas e validadas:
+
+```text
+bronze/ecommerce/<tabela>/
+  → deduplicação, limpeza e validação
+  → silver/ecommerce/<tabela>/_delta_log/
+```
+
+O job mantém o registro mais recente por chave primária, valida domínios e
+relacionamentos e executa `MERGE` incremental. Cada execução gera um manifesto
+com inserções, atualizações, rejeições e duplicatas removidas. Configuração
+completa em
+[`docs/dag_bronze_silver.md`](docs/dag_bronze_silver.md).
 
 ## Estrutura da camada Gold
 
