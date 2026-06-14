@@ -27,7 +27,7 @@ class AirflowEnvironmentConfigTest(unittest.TestCase):
 
     def test_airflow_requirements_include_dag_providers(self):
         requirements = {
-            line.strip()
+            line.strip().split("==", 1)[0]
             for line in (REPO_ROOT / "requirements-airflow.txt").read_text(
                 encoding="utf-8"
             ).splitlines()
