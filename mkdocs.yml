@@ -4,6 +4,7 @@ nav:
   - Início: index.md
   - Modelo MongoDB (origem): modelo_mongodb.md
   - MongoDB Atlas (compartilhado): mongodb_atlas.md
+  - Ambiente Airflow: ambiente_airflow.md
   - Estrutura Landing: estrutura_landing.md
   - Estrutura Bronze: estrutura_bronze.md
   - Estrutura Silver: estrutura_silver.md

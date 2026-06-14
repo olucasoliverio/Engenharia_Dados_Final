@@ -19,6 +19,8 @@ flowchart LR
 
 - [Modelo MongoDB](modelo_mongodb.md): coleções, tipos e relacionamentos.
 - [MongoDB Atlas](mongodb_atlas.md): configuração da origem compartilhada.
+- [Ambiente Airflow](ambiente_airflow.md): stack Docker local para orquestrar
+  as DAGs.
 - [Estrutura Landing](estrutura_landing.md): MinIO, bucket, prefixos e
   validação.
 - [Estrutura Bronze](estrutura_bronze.md): contrato das tabelas Delta,
