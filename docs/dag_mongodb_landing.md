@@ -29,17 +29,20 @@ flowchart LR
 
 ## Dependências
 
-Os providers devem ser instalados na mesma imagem/ambiente do Airflow,
-respeitando o arquivo de constraints da versão adotada:
+Os providers são instalados na imagem customizada do Airflow pelo
+`Dockerfile.airflow`, respeitando o arquivo de constraints da versão adotada:
 
 ```bash
-pip install -r requirements-airflow.txt
+docker compose build airflow-apiserver
 ```
 
-Versões registradas no projeto:
+O arquivo `requirements-airflow.txt` registra os providers necessários:
 
-- `apache-airflow-providers-mongo==5.4.0`
-- `apache-airflow-providers-amazon==9.29.0`
+- `apache-airflow-providers-mongo`
+- `apache-airflow-providers-amazon`
+
+O passo a passo do ambiente local está em
+[`docs/ambiente_airflow.md`](ambiente_airflow.md).
 
 ## Connections do Airflow
 

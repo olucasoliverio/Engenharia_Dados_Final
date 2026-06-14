@@ -101,6 +101,43 @@ Configuração das Connections, variáveis, execução e evidências estão
 documentadas em
 [`docs/dag_mongodb_landing.md`](docs/dag_mongodb_landing.md).
 
+## Ambiente Airflow local
+
+O Airflow roda via Docker Compose junto com MongoDB, MinIO e Postgres. O stack
+usa uma imagem customizada baseada em `apache/airflow` para instalar os
+providers de MongoDB e Amazon/S3 usados pela DAG.
+
+```bash
+cp .env.example .env
+
+docker compose up -d --build \
+  mongodb \
+  minio \
+  airflow-apiserver \
+  airflow-scheduler \
+  airflow-dag-processor \
+  airflow-triggerer
+```
+
+Interface: <http://localhost:8080>
+
+Credenciais locais padrão:
+
+```text
+usuario: airflow
+senha: airflow
+```
+
+Valide a importação das DAGs:
+
+```bash
+docker compose exec airflow-apiserver airflow dags list-import-errors
+docker compose exec airflow-apiserver airflow dags list
+```
+
+Detalhes de serviços, Connections e comandos de parada estão em
+[`docs/ambiente_airflow.md`](docs/ambiente_airflow.md).
+
 Testes unitários da lógica de ingestão:
 
 ```bash
