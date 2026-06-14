@@ -31,3 +31,5 @@ flowchart LR
   validação.
 - [DAG MongoDB → Landing](dag_mongodb_landing.md): ingestão incremental,
   checkpoints e formato dos arquivos.
+- [DAG Landing → Bronze](dag_landing_bronze.md): conversão PySpark para Delta,
+  idempotência e auditoria.

@@ -198,6 +198,21 @@ DAG Landing → Bronze. O contrato está em
 [`config/bronze_structure.json`](config/bronze_structure.json), com detalhes em
 [`docs/estrutura_bronze.md`](docs/estrutura_bronze.md).
 
+## DAG Landing → Bronze
+
+A DAG `landing_to_bronze` submete um job PySpark que converte os JSONs da
+Landing para dez tabelas Delta:
+
+```text
+landing/ecommerce/<colecao>/*.json
+  → bronze/ecommerce/<colecao>/_delta_log/
+  → bronze/ecommerce/<colecao>/ingestion_date=AAAA-MM-DD/*.parquet
+```
+
+O processamento é idempotente por arquivo de origem e gera um manifesto de
+auditoria por execução. Configuração completa em
+[`docs/dag_landing_bronze.md`](docs/dag_landing_bronze.md).
+
 ## Estrutura da camada Silver
 
 A camada Silver reserva os prefixos das dez tabelas limpas e padronizadas:

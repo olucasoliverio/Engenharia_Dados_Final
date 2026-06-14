@@ -107,8 +107,8 @@ Nas execuções seguintes, a consulta usa:
 
 A sobreposição evita perda de documentos quando vários registros possuem o
 mesmo `updated_at` ou quando chegam atrasados. Ela pode gerar duplicatas entre
-execuções, o que é esperado na Landing; a camada Bronze será responsável pela
-deduplicação.
+execuções, o que é esperado na Landing e na Bronze histórica; a camada Silver
+será responsável pela deduplicação de negócio.
 
 Os checkpoints só avançam depois que os arquivos de todas as coleções e o
 manifesto são enviados ao object storage. Se qualquer extração falhar, uma nova
