@@ -29,12 +29,13 @@ O arquivo `config/gold_structure.json` define oito tabelas:
 | `fato_entregas` | Fato | Prazo, atraso, transportadora e status |
 | `fato_avaliacoes` | Fato | Nota e volume de avaliações |
 
-Categoria e fornecedor serão incorporados à dimensão de produto pela DAG da
-Issue #18. Isso simplifica o consumo no BI e evita exigir múltiplos joins para
-as análises mais comuns.
+Categoria e fornecedor são incorporados à dimensão de produto pela
+[DAG Silver → Gold](dag_silver_gold.md). Isso simplifica o consumo no BI e
+evita exigir múltiplos joins para as análises mais comuns.
 
 Nenhum particionamento global é definido nesta etapa. A DAG Silver → Gold
-escolherá a estratégia de cada fato conforme a data de referência usada.
+mantém as dimensões sem particionamento e particiona as quatro tabelas fato
+pela coluna `ano`.
 
 ## Inicialização
 
@@ -87,7 +88,7 @@ s3://datalake/
 ```
 
 Os marcadores reservam os prefixos, mas não criam tabelas Delta vazias.
-A primeira gravação da DAG Silver → Gold criará os arquivos Parquet e o
+A primeira gravação da DAG Silver → Gold cria os arquivos Parquet e o
 `_delta_log` de cada modelo.
 
 ## Indicadores suportados
@@ -101,7 +102,8 @@ O modelo foi organizado para permitir, entre outros:
 - prazo médio, atraso e desempenho por transportadora;
 - nota média e avaliações por produto.
 
-Os valores desses indicadores não são calculados nesta issue.
+As medidas necessárias para esses indicadores são materializadas pela
+DAG Silver → Gold e agregadas no consumo pelo Power BI ou Superset.
 
 ## Validação
 
@@ -138,5 +140,6 @@ novas versões.
 
 ## Limites desta issue
 
-Esta entrega prepara e valida o armazenamento da Gold. Os joins, dimensões,
-fatos, agregações e KPIs serão gerados pela DAG Silver → Gold da Issue #18.
+Esta entrega prepara e valida o armazenamento da Gold. A implementação dos
+joins, dimensões, fatos e medidas de negócio está documentada separadamente na
+[Issue #18](dag_silver_gold.md).
