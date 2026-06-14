@@ -9,3 +9,4 @@ nav:
   - Estrutura Silver: estrutura_silver.md
   - Estrutura Gold: estrutura_gold.md
   - DAG MongoDB para Landing: dag_mongodb_landing.md
+  - DAG Landing para Bronze: dag_landing_bronze.md
