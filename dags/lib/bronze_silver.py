@@ -44,10 +44,28 @@ class ForeignKeyRule:
 
 
 @dataclass(frozen=True)
+class UniqueRule:
+    """Regra de unicidade de negócio aplicada após a dedup por chave primária.
+
+    Se *condition_field* e *condition_value* estiverem preenchidos, a regra
+    aplica-se apenas ao subconjunto de linhas em que
+    ``condition_field == condition_value`` (ex.: só pagamentos aprovados).
+    Para linhas fora da condição o registro passa sem restrição.
+    """
+
+    fields: tuple[str, ...]
+    rejection_type: str
+    description: str
+    condition_field: str | None = None
+    condition_value: str | None = None
+
+
+@dataclass(frozen=True)
 class EntityRule:
     primary_key: str
     fields: tuple[FieldRule, ...]
     foreign_keys: tuple[ForeignKeyRule, ...] = ()
+    unique_rules: tuple[UniqueRule, ...] = ()
 
 
 def _field(
@@ -112,6 +130,16 @@ ENTITY_RULES: dict[str, EntityRule] = {
             ),
             _field("data_cadastro", "date", "date"),
             _field("updated_at", "date", "timestamp"),
+        ),
+        unique_rules=(
+            UniqueRule(
+                fields=("cpf",),
+                rejection_type="cpf_duplicado",
+                description=(
+                    "CPF deve ser unico entre clientes — "
+                    "mantido o registro com updated_at mais recente"
+                ),
+            ),
         ),
     ),
     "categorias": EntityRule(
@@ -302,6 +330,18 @@ ENTITY_RULES: dict[str, EntityRule] = {
             _field("updated_at", "date", "timestamp"),
         ),
         foreign_keys=(ForeignKeyRule("id_pedido", "pedidos", "id_pedido"),),
+        unique_rules=(
+            UniqueRule(
+                fields=("id_pedido",),
+                rejection_type="pagamento_duplicado_aprovado",
+                description=(
+                    "Cada pedido pode ter no maximo um pagamento com "
+                    "status aprovado — mantido o registro com updated_at mais recente"
+                ),
+                condition_field="status_pagamento",
+                condition_value="aprovado",
+            ),
+        ),
     ),
     "entregas": EntityRule(
         primary_key="id_entrega",
@@ -464,6 +504,9 @@ def build_manifest(
             for key in (
                 "records_read",
                 "duplicates_removed",
+                "field_rejected",
+                "business_rule_rejected",
+                "referential_rejected",
                 "records_rejected",
                 "records_valid",
                 "inserted",
@@ -483,6 +526,70 @@ def _as_utc(value: datetime) -> datetime:
     return value.astimezone(timezone.utc)
 
 
+def apply_unique_rules(
+    data,
+    *,
+    rule: "EntityRule",
+    run_id: str,
+    table: str,
+):
+    """Aplica regras de unicidade de negócio após a dedup por chave primária.
+
+    Retorna ``(valid, rejected_list)`` onde *rejected_list* é uma lista de
+    DataFrames com as colunas extras ``_rejection_type`` e
+    ``_rejection_detail``, prontos para gravação no quality log.
+
+    Critério de desempate (quem fica): ``updated_at`` mais recente →
+    ``_silver_source_ingested_at`` mais recente → ``_silver_source_file``
+    como critério determinístico final.
+    """
+    from pyspark.sql import Window
+    from pyspark.sql import functions as F
+
+    if not rule.unique_rules:
+        return data, []
+
+    valid = data
+    rejected_list: list = []
+
+    for unique_rule in rule.unique_rules:
+        if unique_rule.condition_field is not None:
+            mask = F.col(unique_rule.condition_field) == unique_rule.condition_value
+            subject = valid.filter(mask)
+            remainder = valid.filter(~mask)
+        else:
+            subject = valid
+            remainder = None
+
+        window = Window.partitionBy(*unique_rule.fields).orderBy(
+            F.col("updated_at").desc_nulls_last(),
+            F.col("_silver_source_ingested_at").desc_nulls_last(),
+            F.col("_silver_source_file").desc_nulls_last(),
+        )
+        ranked = subject.withColumn("_biz_rank", F.row_number().over(window))
+
+        kept = ranked.filter(F.col("_biz_rank") == 1).drop("_biz_rank")
+        rejected = (
+            ranked.filter(F.col("_biz_rank") > 1)
+            .drop("_biz_rank")
+            .withColumn("_rejection_type", F.lit(unique_rule.rejection_type))
+            .withColumn("_rejection_detail", F.lit(unique_rule.description))
+        )
+        rejected_list.append(rejected)
+
+        if remainder is not None:
+            valid = kept.unionByName(remainder)
+        else:
+            valid = kept
+
+    return valid, rejected_list
+
+
+def quality_log_uri(bucket: str, scheme: str = "s3a") -> str:
+    """URI da tabela Delta de log de qualidade (append-only, Silver control)."""
+    return f"{scheme}://{_safe_component(bucket)}/silver/_control/quality_log/"
+
+
 def _safe_component(value: str) -> str:
     normalized = re.sub(r"[^A-Za-z0-9._-]+", "_", value.strip())
     if not normalized:
@@ -495,12 +602,15 @@ __all__ = [
     "EntityRule",
     "FieldRule",
     "ForeignKeyRule",
+    "UniqueRule",
+    "apply_unique_rules",
     "bronze_table_uri",
     "build_manifest",
     "build_manifest_key",
     "build_spark_conf",
     "parse_logical_date",
     "parse_pipeline_tables",
+    "quality_log_uri",
     "silver_table_uri",
     "spark_packages",
 ]

@@ -19,12 +19,15 @@ from dags.lib.bronze_silver import (  # noqa: E402
     ENTITY_RULES,
     EntityRule,
     FieldRule,
+    UniqueRule,
+    apply_unique_rules,
     bronze_table_uri,
     build_manifest,
     build_manifest_key,
     build_spark_conf,
     parse_logical_date,
     parse_pipeline_tables,
+    quality_log_uri,
     silver_table_uri,
 )
 
@@ -321,6 +324,63 @@ def _merge_silver(
     }
 
 
+def _write_quality_log(
+    spark,
+    rejected_list: list,
+    *,
+    bucket: str,
+    table: str,
+    run_id: str,
+    primary_key: str,
+) -> int:
+    """Grava registros rejeitados pelas regras de negócio na tabela Delta de log.
+
+    A tabela é append-only e fica em:
+        s3a://<bucket>/silver/_control/quality_log/
+
+    Colunas gravadas
+    ----------------
+    run_id          — ID da execução Airflow
+    dag_id          — sempre "bronze_to_silver"
+    tabela          — nome da tabela Silver (ex.: "clientes")
+    chave_primaria  — valor da PK do registro rejeitado (string)
+    tipo_rejeicao   — "cpf_duplicado" | "pagamento_duplicado_aprovado"
+    detalhe         — descrição legível da regra violada
+    hash_registro   — sha256 dos campos de negócio (_silver_record_hash)
+    rejeitado_em    — timestamp UTC do processamento
+    """
+    from pyspark.sql import functions as F
+
+    log_uri = quality_log_uri(bucket)
+    total = 0
+
+    for rejected in rejected_list:
+        count = rejected.count()
+        if count == 0:
+            continue
+        total += count
+
+        log_df = rejected.select(
+            F.lit(run_id).alias("run_id"),
+            F.lit("bronze_to_silver").alias("dag_id"),
+            F.lit(table).alias("tabela"),
+            F.col(primary_key).cast("string").alias("chave_primaria"),
+            F.col("_rejection_type").alias("tipo_rejeicao"),
+            F.col("_rejection_detail").alias("detalhe"),
+            F.col("_silver_record_hash").alias("hash_registro"),
+            F.current_timestamp().alias("rejeitado_em"),
+        )
+        log_df.write.format("delta").mode("append").save(log_uri)
+        LOGGER.info(
+            "Quality log: %d registros rejeitados (%s) na tabela %s",
+            count,
+            rejected.first()["_rejection_type"],
+            table,
+        )
+
+    return total
+
+
 def process_table(
     spark,
     *,
@@ -347,9 +407,28 @@ def process_table(
         deduplicated_count = candidates.count()
         field_valid = candidates.filter(quality_condition)
         field_valid_count = field_valid.count()
+
+        # --- regras de unicidade de negócio (CPF, pagamento aprovado) ----------
+        biz_valid, biz_rejected = apply_unique_rules(
+            field_valid,
+            rule=rule,
+            run_id=run_id,
+            table=table,
+        )
+        biz_rejected_count = _write_quality_log(
+            spark,
+            biz_rejected,
+            bucket=bucket,
+            table=table,
+            run_id=run_id,
+            primary_key=rule.primary_key,
+        )
+        biz_valid_count = field_valid_count - biz_rejected_count
+        # -----------------------------------------------------------------------
+
         relational_valid = _validate_foreign_keys(
             spark,
-            field_valid,
+            biz_valid,
             bucket=bucket,
             database=database,
             rule=rule,
@@ -377,7 +456,8 @@ def process_table(
         "records_deduplicated": deduplicated_count,
         "duplicates_removed": records_read - deduplicated_count,
         "field_rejected": deduplicated_count - field_valid_count,
-        "referential_rejected": field_valid_count - records_valid,
+        "business_rule_rejected": biz_rejected_count,
+        "referential_rejected": biz_valid_count - records_valid,
         "records_rejected": deduplicated_count - records_valid,
         "records_valid": records_valid,
         **merge_metrics,
