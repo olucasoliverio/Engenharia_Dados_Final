@@ -143,3 +143,9 @@ novas versões.
 Esta entrega prepara e valida o armazenamento da Gold. A implementação dos
 joins, dimensões, fatos e medidas de negócio está documentada separadamente na
 [Issue #18](dag_silver_gold.md).
+
+## Referências
+
+- [Kimball — Dimensional Modeling](https://www.kimballgroup.com/data-warehouse-business-intelligence-resources/kimball-techniques/dimensional-modeling-techniques/)
+- [Delta Lake](https://docs.delta.io/latest/index.html)
+- Página completa de [referências](referencias.md)

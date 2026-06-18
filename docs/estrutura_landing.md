@@ -190,3 +190,9 @@ credenciais e região da conta AWS.
 Esta entrega cria e valida a estrutura de armazenamento. A extração MongoDB →
 Landing pertence à Issue #15, e a conversão dos arquivos para Delta Lake na
 Bronze pertence à Issue #16.
+
+## Referências
+
+- [MinIO — Documentação](https://min.io/docs/minio/linux/index.html)
+- [MongoDB Extended JSON](https://www.mongodb.com/docs/manual/reference/mongodb-extended-json/)
+- Página completa de [referências](referencias.md)

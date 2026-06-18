@@ -170,3 +170,9 @@ Evidências para anexar à PR:
 A DAG pressupõe que o bucket e a estrutura da Landing já existam. A criação do
 Data Lake pertence à Issue #10; a infraestrutura Docker do Airflow pertence às
 issues de ambiente atribuídas aos demais integrantes.
+
+## Referências
+
+- [Apache Airflow](https://airflow.apache.org/docs/)
+- [MongoDB Extended JSON](https://www.mongodb.com/docs/manual/reference/mongodb-extended-json/)
+- Página completa de [referências](referencias.md)

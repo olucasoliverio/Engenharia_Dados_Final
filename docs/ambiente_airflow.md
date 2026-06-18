@@ -135,3 +135,9 @@ Parar removendo dados locais do MongoDB, MinIO e metadados do Airflow:
 ```bash
 docker compose down -v
 ```
+
+## Referências
+
+- [Apache Airflow — Documentação](https://airflow.apache.org/docs/)
+- [Docker Compose](https://docs.docker.com/compose/)
+- Página completa de [referências](referencias.md)

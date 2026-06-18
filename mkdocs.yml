@@ -1,15 +1,134 @@
 site_name: Engenharia de Dados — Projeto Final
+site_description: >-
+  Pipeline de dados de e-commerce: MongoDB (origem) → Data Lake medalhão
+  (Landing · Bronze · Silver · Gold) com MinIO, Airflow, Apache Spark e Delta Lake.
+site_author: Equipe Engenharia de Dados
+site_url: https://olucasoliverio.github.io/Engenharia_Dados_Final/
+
+repo_url: https://github.com/olucasoliverio/Engenharia_Dados_Final
+repo_name: olucasoliverio/Engenharia_Dados_Final
+edit_uri: edit/main/docs/
+
+copyright: >
+  &copy; 2026 Equipe Engenharia de Dados &mdash; Projeto Acadêmico (MIT)
+
+theme:
+  name: material
+  language: pt
+  icon:
+    logo: material/database-arrow-right
+    repo: fontawesome/brands/github
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: deep purple
+      accent: amber
+      toggle:
+        icon: material/weather-night
+        name: Alternar para o modo escuro
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: deep purple
+      accent: amber
+      toggle:
+        icon: material/weather-sunny
+        name: Alternar para o modo claro
+  font:
+    text: Inter
+    code: JetBrains Mono
+  features:
+    - navigation.instant
+    - navigation.instant.progress
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.indexes
+    - navigation.top
+    - navigation.footer
+    - toc.follow
+    - search.suggest
+    - search.highlight
+    - search.share
+    - content.code.copy
+    - content.code.select
+    - content.code.annotate
+    - content.tabs.link
+    - content.tooltips
+    - content.action.edit
+    - content.action.view
+
+plugins:
+  - search:
+      lang: pt
+  - tags
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/olucasoliverio/Engenharia_Dados_Final
+      name: Repositório no GitHub
+  generator: false
+
+extra_css:
+  - stylesheets/extra.css
+
+extra_javascript:
+  - javascripts/extra.js
 
 nav:
   - Início: index.md
-  - Modelo MongoDB (origem): modelo_mongodb.md
-  - MongoDB Atlas (compartilhado): mongodb_atlas.md
-  - Ambiente Airflow: ambiente_airflow.md
-  - Estrutura Landing: estrutura_landing.md
-  - Estrutura Bronze: estrutura_bronze.md
-  - Estrutura Silver: estrutura_silver.md
-  - Estrutura Gold: estrutura_gold.md
-  - DAG MongoDB para Landing: dag_mongodb_landing.md
-  - DAG Landing para Bronze: dag_landing_bronze.md
-  - DAG Bronze para Silver: dag_bronze_silver.md
-  - DAG Silver para Gold: dag_silver_gold.md
+  - Arquitetura:
+      - Visão geral: arquitetura.md
+      - Modelo de dados (origem): modelo_mongodb.md
+      - MongoDB Atlas (compartilhado): mongodb_atlas.md
+      - Ambiente Airflow: ambiente_airflow.md
+  - Camadas (Medalhão):
+      - Landing: estrutura_landing.md
+      - Bronze: estrutura_bronze.md
+      - Silver: estrutura_silver.md
+      - Gold: estrutura_gold.md
+  - Pipelines (DAGs):
+      - MongoDB → Landing: dag_mongodb_landing.md
+      - Landing → Bronze: dag_landing_bronze.md
+      - Bronze → Silver: dag_bronze_silver.md
+      - Silver → Gold: dag_silver_gold.md
+  - Referências: referencias.md
+
+markdown_extensions:
+  - admonition
+  - tables
+  - attr_list
+  - md_in_html
+  - def_list
+  - footnotes
+  - abbr
+  - toc:
+      permalink: true
+      permalink_title: Link permanente para esta seção
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets:
+      base_path: ["."]
+      check_paths: true
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.caret
+  - pymdownx.tilde
+  - pymdownx.mark
+  - pymdownx.keys
+  - pymdownx.smartsymbols
+  - pymdownx.tasklist:
+      custom_checkbox: true
