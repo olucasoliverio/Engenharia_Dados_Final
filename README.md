@@ -44,10 +44,11 @@ docker compose down        # para o container (mantém os dados no volume)
 docker compose down -v     # para e APAGA os dados (remove o volume)
 ```
 
-## Popular o banco com os dados simulados
+## Gerar e popular o banco com os dados simulados
 
-Os dados simulados estão em `dataset/arquivos_csv/` (gerados pelos scripts
-`dataset/scripts_py/gerar_*.py`). O script `carregar_mongo.py` lê esses CSVs,
+Os CSVs em `dataset/arquivos_csv/` **não são versionados** (reproduzíveis e
+pesam ~15 MB). O `carregar_mongo.py` **gera os CSVs automaticamente** quando
+estão ausentes (chamando `gerar_dados.py`) e em seguida carrega no Mongo:
 converte os tipos (datas viram `ISODate`, números viram int/float, campos vazios
 viram `null`), cria as 10 coleções com os validadores `$jsonSchema` de
 `mongodb/schemas/` e os índices (chave primária, chaves estrangeiras e
@@ -59,14 +60,19 @@ python3 -m venv .venv
 source .venv/bin/activate
 pip install -r dataset/scripts_py/requirements.txt
 
+# gera os CSVs (se faltarem) e popula o Mongo num passo só:
 python dataset/scripts_py/carregar_mongo.py
 ```
+
+Os geradores usam sementes fixas, então a saída é determinística. Para só
+(re)gerar os CSVs sem carregar: `python dataset/scripts_py/gerar_dados.py`.
 
 Opções úteis:
 
 ```bash
 python dataset/scripts_py/carregar_mongo.py --only pedidos   # uma coleção só
 python dataset/scripts_py/carregar_mongo.py --no-validator   # sem $jsonSchema
+python dataset/scripts_py/carregar_mongo.py --no-gerar       # nao gera CSV ausente
 python dataset/scripts_py/carregar_mongo.py --uri "<MONGO_URI>" --db ecommerce
 ```
 
@@ -289,3 +295,16 @@ receita, pagamentos aprovados, prazo e atraso de entregas e classificação das
 avaliações. As tabelas fato são particionadas por ano e sincronizadas por
 `MERGE`, sem duplicar dados em novas execuções. Configuração completa em
 [`docs/dag_silver_gold.md`](docs/dag_silver_gold.md).
+
+## Documentação (MkDocs)
+
+As páginas-fonte ficam em `docs/` e o `mkdocs.yml` na raiz. O diretório `site/`
+(saída do build) **não é versionado** — é gerado localmente e publicado no
+GitHub Pages.
+
+```bash
+pip install mkdocs
+mkdocs serve      # pré-visualização em http://127.0.0.1:8000
+mkdocs build      # gera site/ (local, ignorado pelo git)
+mkdocs gh-deploy  # publica no GitHub Pages
+```
