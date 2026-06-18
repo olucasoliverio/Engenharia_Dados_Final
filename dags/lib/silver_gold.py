@@ -36,12 +36,36 @@ SILVER_TABLES = (
 )
 
 
+# --- Colunas de controle e sentinelas do SCD Tipo 2 -------------------------
+SCD2_VALID_FROM = "dw_valid_from"
+SCD2_VALID_TO = "dw_valid_to"
+SCD2_IS_CURRENT = "dw_is_current"
+SCD2_RECORD_HASH = "dw_record_hash"
+SCD2_CONTROL_COLUMNS = (
+    SCD2_VALID_FROM,
+    SCD2_VALID_TO,
+    SCD2_IS_CURRENT,
+    SCD2_RECORD_HASH,
+)
+# Início "desde sempre" da primeira versão (faz os fatos históricos casarem)
+# e fim em aberto da versão vigente.
+SCD2_BEGINNING_OF_TIME = "1900-01-01 00:00:00"
+SCD2_END_OF_TIME = "9999-12-31 23:59:59"
+
+
 @dataclass(frozen=True)
 class GoldModelRule:
     primary_key: str
     kind: str
     source_tables: tuple[str, ...]
     partition_columns: tuple[str, ...] = ()
+    # "type2" -> dimensão versionada; "static" -> dimensão sem histórico
+    # (ex.: calendário); "none" -> fato.
+    scd_type: str = "none"
+    # Chave natural/durável de negócio (estável entre versões).
+    natural_key: str | None = None
+    # Chave substituta única por versão (PK da dimensão SCD2).
+    surrogate_key: str | None = None
 
 
 GOLD_MODELS: dict[str, GoldModelRule] = {
@@ -56,21 +80,31 @@ GOLD_MODELS: dict[str, GoldModelRule] = {
             "entregas",
             "avaliacoes",
         ),
+        scd_type="static",
     ),
     "dim_cliente": GoldModelRule(
-        primary_key="cliente_key",
+        primary_key="cliente_sk",
         kind="dimension",
         source_tables=("clientes",),
+        scd_type="type2",
+        natural_key="cliente_key",
+        surrogate_key="cliente_sk",
     ),
     "dim_produto": GoldModelRule(
-        primary_key="produto_key",
+        primary_key="produto_sk",
         kind="dimension",
         source_tables=("produtos", "categorias", "fornecedores"),
+        scd_type="type2",
+        natural_key="produto_key",
+        surrogate_key="produto_sk",
     ),
     "dim_cupom": GoldModelRule(
-        primary_key="cupom_key",
+        primary_key="cupom_sk",
         kind="dimension",
         source_tables=("cupons",),
+        scd_type="type2",
+        natural_key="cupom_key",
+        surrogate_key="cupom_sk",
     ),
     "fato_vendas": GoldModelRule(
         primary_key="venda_key",
@@ -115,6 +149,17 @@ def parse_gold_models(raw_value: str | None) -> tuple[str, ...]:
         raise ValueError("Unknown Gold models: " + ", ".join(unknown))
     selected = set(models)
     return tuple(model for model in GOLD_MODELS if model in selected)
+
+
+def scd2_models() -> tuple[str, ...]:
+    """Modelos cujas dimensões usam SCD Tipo 2 (versionadas)."""
+    return tuple(
+        name for name, rule in GOLD_MODELS.items() if rule.scd_type == "type2"
+    )
+
+
+def is_scd2(model: str) -> bool:
+    return GOLD_MODELS[model].scd_type == "type2"
 
 
 def silver_table_uri(
@@ -173,13 +218,15 @@ def build_manifest(
             "model": "dimensional",
         },
         "totals": {
-            key: sum(int(item[key]) for item in ordered)
+            key: sum(int(item.get(key, 0)) for item in ordered)
             for key in (
                 "records_modelled",
                 "inserted",
                 "updated",
                 "deleted",
                 "unchanged",
+                "versions_expired",
+                "versions_inserted",
                 "rows_written",
             )
         },
@@ -204,13 +251,22 @@ def _safe_component(value: str) -> str:
 __all__ = [
     "GOLD_MODELS",
     "SILVER_TABLES",
+    "SCD2_VALID_FROM",
+    "SCD2_VALID_TO",
+    "SCD2_IS_CURRENT",
+    "SCD2_RECORD_HASH",
+    "SCD2_CONTROL_COLUMNS",
+    "SCD2_BEGINNING_OF_TIME",
+    "SCD2_END_OF_TIME",
     "GoldModelRule",
     "build_manifest",
     "build_manifest_key",
     "build_spark_conf",
     "gold_table_uri",
+    "is_scd2",
     "parse_gold_models",
     "parse_logical_date",
+    "scd2_models",
     "silver_table_uri",
     "spark_packages",
 ]

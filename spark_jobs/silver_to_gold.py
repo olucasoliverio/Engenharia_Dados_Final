@@ -18,6 +18,12 @@ sys.path.insert(0, str(REPO_ROOT))
 
 from dags.lib.silver_gold import (  # noqa: E402
     GOLD_MODELS,
+    SCD2_BEGINNING_OF_TIME,
+    SCD2_END_OF_TIME,
+    SCD2_IS_CURRENT,
+    SCD2_RECORD_HASH,
+    SCD2_VALID_FROM,
+    SCD2_VALID_TO,
     SILVER_TABLES,
     build_manifest,
     build_manifest_key,
@@ -148,7 +154,6 @@ def _build_dim_cliente(spark, silver):
 
     return silver["clientes"].select(
         F.col("id_cliente").alias("cliente_key"),
-        "id_cliente",
         "nome",
         "genero",
         "data_nascimento",
@@ -177,7 +182,6 @@ def _build_dim_produto(spark, silver):
         )
         .select(
             F.col("produto.id_produto").alias("produto_key"),
-            F.col("produto.id_produto"),
             F.col("produto.nome_produto"),
             F.col("produto.descricao").alias("descricao_produto"),
             F.col("produto.marca"),
@@ -199,7 +203,6 @@ def _build_dim_cupom(spark, silver):
 
     return silver["cupons"].select(
         F.col("id_cupom").alias("cupom_key"),
-        "id_cupom",
         "codigo",
         "desconto_percentual",
         "valor_minimo",
@@ -226,6 +229,7 @@ def _build_fato_vendas(spark, silver):
         F.col("item.id_item"),
         F.col("pedido.id_pedido"),
         _date_key(F.col("pedido.data_pedido")).alias("data_key"),
+        F.col("pedido.data_pedido"),
         F.year("pedido.data_pedido").alias("ano"),
         F.col("pedido.id_cliente").alias("cliente_key"),
         F.col("item.id_produto").alias("produto_key"),
@@ -257,6 +261,7 @@ def _build_fato_pagamentos(spark, silver):
         F.col("pagamento.id_pagamento"),
         F.col("pedido.id_pedido"),
         _date_key(F.col("pagamento.data_pagamento")).alias("data_key"),
+        F.col("pagamento.data_pagamento"),
         F.year("pagamento.data_pagamento").alias("ano"),
         F.col("pedido.id_cliente").alias("cliente_key"),
         F.col("pagamento.forma_pagamento"),
@@ -291,6 +296,7 @@ def _build_fato_entregas(spark, silver):
         _date_key(F.col("entrega.data_envio")).alias("data_envio_key"),
         _date_key(data_prevista).alias("data_prevista_key"),
         _date_key(data_real).alias("data_real_key"),
+        F.col("entrega.data_envio"),
         F.year("entrega.data_envio").alias("ano"),
         F.col("pedido.id_cliente").alias("cliente_key"),
         F.col("entrega.status_entrega"),
@@ -322,6 +328,7 @@ def _build_fato_avaliacoes(spark, silver):
         "id_avaliacao",
         "id_pedido",
         _date_key(F.col("data_avaliacao")).alias("data_key"),
+        "data_avaliacao",
         F.year("data_avaliacao").alias("ano"),
         F.col("id_cliente").alias("cliente_key"),
         F.col("id_produto").alias("produto_key"),
@@ -344,17 +351,105 @@ MODEL_BUILDERS: dict[str, Callable] = {
 }
 
 
-def _add_metadata(data, *, run_id: str):
+# Para cada fato: quais dimensões SCD2 anexar e a data do evento usada no
+# join point-in-time (a surrogate vigente naquela data).
+FACT_DIMENSION_LINKS: dict[str, tuple[tuple[str, str], ...]] = {
+    "fato_vendas": (
+        ("dim_cliente", "data_pedido"),
+        ("dim_produto", "data_pedido"),
+        ("dim_cupom", "data_pedido"),
+    ),
+    "fato_pagamentos": (("dim_cliente", "data_pagamento"),),
+    "fato_entregas": (("dim_cliente", "data_envio"),),
+    "fato_avaliacoes": (
+        ("dim_cliente", "data_avaliacao"),
+        ("dim_produto", "data_avaliacao"),
+    ),
+}
+
+# Colunas de metadado/controle que não entram no hash de negócio.
+_NON_BUSINESS_COLUMNS = {
+    "_gold_record_hash",
+    "_gold_airflow_run_id",
+    "_gold_processed_at",
+    SCD2_VALID_FROM,
+    SCD2_VALID_TO,
+    SCD2_IS_CURRENT,
+    SCD2_RECORD_HASH,
+}
+
+
+def _with_run_metadata(data, *, run_id: str):
     from pyspark.sql import functions as F
 
-    business_columns = data.columns
-    return (
-        data.withColumn(
-            "_gold_record_hash",
-            F.sha2(F.to_json(F.struct(*business_columns)), 256),
-        )
-        .withColumn("_gold_airflow_run_id", F.lit(run_id))
-        .withColumn("_gold_processed_at", F.current_timestamp())
+    return data.withColumn("_gold_airflow_run_id", F.lit(run_id)).withColumn(
+        "_gold_processed_at", F.current_timestamp()
+    )
+
+
+def _add_type1_metadata(data, *, run_id: str):
+    """Hash sobre todas as colunas de negócio (modelos Tipo 1 / estáticos)."""
+    from pyspark.sql import functions as F
+
+    business_columns = [c for c in data.columns if c not in _NON_BUSINESS_COLUMNS]
+    hashed = data.withColumn(
+        "_gold_record_hash",
+        F.sha2(F.to_json(F.struct(*business_columns)), 256),
+    )
+    return _with_run_metadata(hashed, run_id=run_id)
+
+
+def _add_scd2_attributes_hash(data, *, natural_key: str):
+    """Hash dos atributos versionados (exclui a chave natural e os controles)."""
+    from pyspark.sql import functions as F
+
+    attribute_columns = [
+        c
+        for c in data.columns
+        if c != natural_key and c not in _NON_BUSINESS_COLUMNS
+    ]
+    return data.withColumn(
+        SCD2_RECORD_HASH,
+        F.sha2(F.to_json(F.struct(*attribute_columns)), 256),
+    )
+
+
+def _surrogate_key(natural_key: str, valid_from):
+    """Surrogate determinístico e único por versão (chave natural + vigência)."""
+    from pyspark.sql import functions as F
+
+    return F.sha2(
+        F.concat_ws(
+            "||",
+            F.col(natural_key).cast("string"),
+            F.date_format(valid_from, "yyyy-MM-dd HH:mm:ss.SSS"),
+        ),
+        256,
+    )
+
+
+def _load_gold_dim(spark, *, bucket: str, database: str, model: str):
+    return spark.read.format("delta").load(gold_table_uri(bucket, database, model))
+
+
+def _attach_dimension_sk(fact, dim, *, natural_key: str, surrogate_key: str, event_date_col: str):
+    """Anexa a surrogate vigente da dimensão na data do evento (point-in-time)."""
+    from pyspark.sql import functions as F
+
+    versions = dim.select(
+        F.col(natural_key).alias("_pit_nk"),
+        F.col(surrogate_key),
+        F.col(SCD2_VALID_FROM).alias("_pit_from"),
+        F.col(SCD2_VALID_TO).alias("_pit_to"),
+    )
+    event_ts = F.col(event_date_col).cast("timestamp")
+    condition = (
+        (F.col(natural_key) == F.col("_pit_nk"))
+        & (event_ts >= F.col("_pit_from"))
+        & (event_ts < F.col("_pit_to"))
+    )
+    return fact.join(versions, condition, "left").drop(
+        "_pit_nk", "_pit_from", "_pit_to"
     )
 
 
@@ -435,6 +530,145 @@ def _sync_gold_table(
     }
 
 
+def _sync_dimension_scd2(
+    spark,
+    source,
+    *,
+    output_uri: str,
+    natural_key: str,
+    surrogate_key: str,
+    run_id: str,
+) -> dict[str, int]:
+    """Carga SCD Tipo 2: preserva histórico versionando atributos alterados.
+
+    A *source* já deve conter a chave natural, os atributos e o
+    ``dw_record_hash``. Na primeira carga cada chave entra como versão vigente
+    desde ``SCD2_BEGINNING_OF_TIME``. Em cargas seguintes, chaves alteradas têm
+    a versão anterior expirada e uma nova versão vigente inserida (staged merge
+    do Delta); chaves inalteradas não geram escrita.
+    """
+    from datetime import datetime, timezone
+
+    from delta.tables import DeltaTable
+    from pyspark.sql import functions as F
+
+    source_count = source.count()
+    if not source_count:
+        raise ValueError(f"Gold dimension {output_uri!r} produced no records")
+
+    low = F.to_timestamp(F.lit(SCD2_BEGINNING_OF_TIME))
+    high = F.to_timestamp(F.lit(SCD2_END_OF_TIME))
+
+    def _finalize_new_versions(data, valid_from_col):
+        prepared = (
+            data.withColumn(SCD2_VALID_FROM, valid_from_col)
+            .withColumn(SCD2_VALID_TO, high)
+            .withColumn(SCD2_IS_CURRENT, F.lit(True))
+        )
+        prepared = prepared.withColumn(
+            surrogate_key, _surrogate_key(natural_key, F.col(SCD2_VALID_FROM))
+        )
+        return _with_run_metadata(prepared, run_id=run_id)
+
+    if not DeltaTable.isDeltaTable(spark, output_uri):
+        initial = _finalize_new_versions(source, low)
+        initial.write.format("delta").save(output_uri)
+        return {
+            "inserted": source_count,
+            "updated": 0,
+            "deleted": 0,
+            "unchanged": 0,
+            "versions_expired": 0,
+            "versions_inserted": source_count,
+            "rows_written": source_count,
+        }
+
+    current = (
+        spark.read.format("delta")
+        .load(output_uri)
+        .filter(F.col(SCD2_IS_CURRENT))
+        .select(
+            F.col(natural_key).alias("_cur_nk"),
+            F.col(SCD2_RECORD_HASH).alias("_cur_hash"),
+        )
+    )
+    joined = source.join(
+        current, source[natural_key] == current["_cur_nk"], "left"
+    )
+    is_new = F.col("_cur_nk").isNull()
+    is_changed = (~is_new) & (F.col(SCD2_RECORD_HASH) != F.col("_cur_hash"))
+
+    flagged = joined.withColumn(
+        "_scd_action",
+        F.when(is_new, F.lit("new"))
+        .when(is_changed, F.lit("changed"))
+        .otherwise(F.lit("unchanged")),
+    ).drop("_cur_nk", "_cur_hash")
+
+    new_count = flagged.filter(F.col("_scd_action") == "new").count()
+    changed_count = flagged.filter(F.col("_scd_action") == "changed").count()
+    unchanged_count = source_count - new_count - changed_count
+
+    if not new_count and not changed_count:
+        return {
+            "inserted": 0,
+            "updated": 0,
+            "deleted": 0,
+            "unchanged": unchanged_count,
+            "versions_expired": 0,
+            "versions_inserted": 0,
+            "rows_written": 0,
+        }
+
+    now_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+    change_ts = F.to_timestamp(F.lit(now_str))
+
+    candidates = flagged.filter(F.col("_scd_action") != "unchanged")
+    new_versions = _finalize_new_versions(
+        candidates,
+        F.when(F.col("_scd_action") == "new", low).otherwise(change_ts),
+    )
+
+    target_columns = spark.read.format("delta").load(output_uri).columns
+    insert_payload = new_versions.drop("_scd_action").withColumn(
+        "_merge_key", F.lit(None).cast("string")
+    )
+    expire_payload = (
+        new_versions.filter(F.col("_scd_action") == "changed")
+        .drop("_scd_action")
+        .withColumn("_merge_key", F.col(natural_key).cast("string"))
+    )
+    staged = insert_payload.unionByName(expire_payload)
+
+    (
+        DeltaTable.forPath(spark, output_uri)
+        .alias("target")
+        .merge(staged.alias("source"), f"target.{natural_key} = source._merge_key")
+        .whenMatchedUpdate(
+            condition=f"target.{SCD2_IS_CURRENT} = true AND source._merge_key IS NOT NULL",
+            set={
+                SCD2_VALID_TO: f"source.{SCD2_VALID_FROM}",
+                SCD2_IS_CURRENT: F.lit(False),
+            },
+        )
+        .whenNotMatchedInsert(
+            condition="source._merge_key IS NULL",
+            values={col: f"source.{col}" for col in target_columns},
+        )
+        .execute()
+    )
+
+    return {
+        "inserted": new_count,
+        "updated": changed_count,
+        "deleted": 0,
+        "unchanged": unchanged_count,
+        "versions_expired": changed_count,
+        "versions_inserted": new_count + changed_count,
+        "rows_written": new_count + changed_count * 2,
+    }
+
+
 def process_model(
     spark,
     silver,
@@ -448,20 +682,46 @@ def process_model(
 
     rule = GOLD_MODELS[model]
     output_uri = gold_table_uri(bucket, database, model)
-    model_data = _add_metadata(
-        MODEL_BUILDERS[model](spark, silver),
-        run_id=run_id,
-    )
+    base = MODEL_BUILDERS[model](spark, silver)
+
+    if rule.scd_type == "type2":
+        model_data = _add_scd2_attributes_hash(base, natural_key=rule.natural_key)
+    else:
+        enriched = base
+        for dim_model, event_col in FACT_DIMENSION_LINKS.get(model, ()):
+            dim_rule = GOLD_MODELS[dim_model]
+            dim_df = _load_gold_dim(
+                spark, bucket=bucket, database=database, model=dim_model
+            )
+            enriched = _attach_dimension_sk(
+                enriched,
+                dim_df,
+                natural_key=dim_rule.natural_key,
+                surrogate_key=dim_rule.surrogate_key,
+                event_date_col=event_col,
+            )
+        model_data = _add_type1_metadata(enriched, run_id=run_id)
+
     model_data.persist(StorageLevel.MEMORY_AND_DISK)
     try:
         records_modelled = model_data.count()
-        metrics = _sync_gold_table(
-            spark,
-            model_data,
-            output_uri=output_uri,
-            primary_key=rule.primary_key,
-            partition_columns=rule.partition_columns,
-        )
+        if rule.scd_type == "type2":
+            metrics = _sync_dimension_scd2(
+                spark,
+                model_data,
+                output_uri=output_uri,
+                natural_key=rule.natural_key,
+                surrogate_key=rule.surrogate_key,
+                run_id=run_id,
+            )
+        else:
+            metrics = _sync_gold_table(
+                spark,
+                model_data,
+                output_uri=output_uri,
+                primary_key=rule.primary_key,
+                partition_columns=rule.partition_columns,
+            )
     finally:
         model_data.unpersist()
 
