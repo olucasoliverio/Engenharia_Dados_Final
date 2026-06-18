@@ -17,6 +17,3 @@ airflow/config/airflow.cfg
 
 # Sistema
 .DS_Store
-
-# venv auxiliar para validar Spark localmente
-.venv-spark/
