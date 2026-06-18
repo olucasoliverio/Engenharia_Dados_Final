@@ -21,6 +21,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import subprocess
 import sys
 import time
 from datetime import datetime
@@ -227,12 +228,36 @@ def carregar_colecao(db, nome: str, tipos: dict, usar_validador: bool) -> int:
     return total
 
 
+def garantir_csvs(alvos: dict) -> bool:
+    """Gera os CSVs ausentes chamando gerar_dados.py. Retorna False se falhar."""
+    faltando = [
+        nome for nome, tipos in alvos.items() if not (CSV_DIR / tipos["csv"]).exists()
+    ]
+    if not faltando:
+        return True
+    print(f"CSV(s) ausente(s): {', '.join(faltando)} — gerando o dataset...")
+    gerador = SCRIPT_DIR / "gerar_dados.py"
+    try:
+        subprocess.run([sys.executable, str(gerador)], check=True)
+    except subprocess.CalledProcessError as e:
+        print(f"ERRO ao gerar os CSVs ({e}).")
+        print("Instale as dependencias de geracao: pip install -r "
+              "dataset/scripts_py/requirements.txt")
+        return False
+    return True
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Carrega os CSVs no MongoDB de origem.")
     parser.add_argument("--uri", help="String de conexao do MongoDB (sobrescreve .env)")
     parser.add_argument("--db", help="Nome do banco (default: ecommerce)")
     parser.add_argument("--only", help="Carrega apenas a colecao informada")
     parser.add_argument("--no-validator", action="store_true", help="Nao aplica os $jsonSchema")
+    parser.add_argument(
+        "--no-gerar",
+        action="store_true",
+        help="Nao gera os CSVs automaticamente quando estiverem ausentes",
+    )
     args = parser.parse_args()
 
     uri, db_nome = resolver_conexao(args)
@@ -240,6 +265,9 @@ def main() -> int:
     if args.only and args.only not in COLECOES:
         print(f"Colecao invalida: {args.only}. Opcoes: {', '.join(COLECOES)}")
         return 2
+
+    if not args.no_gerar and not garantir_csvs(alvos):
+        return 1
 
     # Esconde a senha ao imprimir a URI.
     uri_segura = uri.split("@")[-1] if "@" in uri else uri

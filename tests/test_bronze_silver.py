@@ -90,6 +90,9 @@ class BronzeSilverHelpersTest(unittest.TestCase):
             "table": "clientes",
             "records_read": 12,
             "duplicates_removed": 2,
+            "field_rejected": 1,
+            "business_rule_rejected": 0,
+            "referential_rejected": 0,
             "records_rejected": 1,
             "records_valid": 9,
             "inserted": 7,
@@ -108,6 +111,9 @@ class BronzeSilverHelpersTest(unittest.TestCase):
 
         self.assertEqual("delta", manifest["target"]["format"])
         self.assertEqual(2, manifest["totals"]["duplicates_removed"])
+        self.assertEqual(1, manifest["totals"]["field_rejected"])
+        self.assertEqual(0, manifest["totals"]["business_rule_rejected"])
+        self.assertEqual(0, manifest["totals"]["referential_rejected"])
         self.assertEqual(1, manifest["totals"]["records_rejected"])
         self.assertEqual(8, manifest["totals"]["rows_written"])
 

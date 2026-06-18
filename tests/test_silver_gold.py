@@ -83,6 +83,47 @@ class SilverGoldHelpersTest(unittest.TestCase):
             key,
         )
 
+    def test_scd2_dimensions_declare_keys_and_static_calendar(self):
+        from dags.lib.silver_gold import is_scd2, scd2_models
+
+        self.assertEqual(("dim_cliente", "dim_produto", "dim_cupom"), scd2_models())
+        for name in ("dim_cliente", "dim_produto", "dim_cupom"):
+            rule = GOLD_MODELS[name]
+            self.assertEqual("type2", rule.scd_type, name)
+            self.assertTrue(rule.natural_key, name)
+            self.assertEqual(rule.surrogate_key, rule.primary_key, name)
+            self.assertTrue(is_scd2(name))
+
+        self.assertEqual("static", GOLD_MODELS["dim_tempo"].scd_type)
+        for name, rule in GOLD_MODELS.items():
+            if rule.kind == "fact":
+                self.assertEqual("none", rule.scd_type, name)
+                self.assertFalse(is_scd2(name))
+
+    def test_manifest_aggregates_scd2_version_totals(self):
+        result = {
+            "table": "dim_cliente",
+            "records_modelled": 10,
+            "inserted": 2,
+            "updated": 1,
+            "deleted": 0,
+            "unchanged": 7,
+            "versions_expired": 1,
+            "versions_inserted": 3,
+            "rows_written": 4,
+        }
+        manifest = json.loads(
+            build_manifest(
+                run_id="manual__test",
+                logical_date=datetime(2026, 6, 13, tzinfo=timezone.utc),
+                database="ecommerce",
+                results=[result],
+            )
+        )
+
+        self.assertEqual(1, manifest["totals"]["versions_expired"])
+        self.assertEqual(3, manifest["totals"]["versions_inserted"])
+
     def test_manifest_contains_sync_totals(self):
         result = {
             "table": "dim_cliente",
