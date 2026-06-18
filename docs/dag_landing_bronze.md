@@ -172,3 +172,9 @@ execução comprova que os mesmos arquivos da Landing não são duplicados.
 
 Esta issue não instala o ambiente Docker do Airflow, responsabilidade das
 Issues #14/#19, e não aplica regras de limpeza da Silver.
+
+## Referências
+
+- [Apache Spark](https://spark.apache.org/docs/latest/)
+- [Delta Lake](https://docs.delta.io/latest/index.html)
+- Página completa de [referências](referencias.md)

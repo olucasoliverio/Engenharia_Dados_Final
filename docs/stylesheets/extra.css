@@ -1,0 +1,128 @@
+/* ============================================================
+   Engenharia de Dados — Projeto Final · extra.css
+   Tema: Deep Purple + Amber | Medalhão: Landing / Bronze / Silver / Gold
+   ============================================================ */
+
+:root {
+  --accent-landing: #64748b; /* slate — dado bruto */
+  --accent-bronze:  #c2410c; /* cobre */
+  --accent-silver:  #475569; /* prata escura */
+  --accent-gold:    #d97706; /* dourado */
+
+  --hero-grad-1: #7c3aed; /* purple-600 */
+  --hero-grad-2: #db2777; /* pink-600 */
+  --hero-grad-3: #f59e0b; /* amber-500 */
+
+  --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.04), 0 10px 30px rgba(124, 58, 237, 0.10);
+  --shadow-pop:  0 1px 2px rgba(0, 0, 0, 0.04), 0 16px 40px rgba(124, 58, 237, 0.18);
+}
+
+/* Utilitários de cor por camada */
+.accent-landing { color: var(--accent-landing) !important; font-weight: 600; }
+.accent-bronze  { color: var(--accent-bronze)  !important; font-weight: 600; }
+.accent-silver  { color: var(--accent-silver)  !important; font-weight: 600; }
+.accent-gold    { color: var(--accent-gold)    !important; font-weight: 600; }
+
+/* ---------- Tipografia ---------- */
+.md-typeset h1,
+.md-typeset h2,
+.md-typeset h3 {
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+.md-typeset h2 {
+  margin-top: 3rem;
+  font-size: 1.6rem;
+  padding-bottom: 0.45rem;
+  border-bottom: 1px solid var(--md-default-fg-color--lightest);
+}
+.md-typeset h3 { margin-top: 2.2rem; }
+.md-typeset a { text-underline-offset: 2px; transition: color 0.18s ease; }
+.md-typeset a:hover { color: var(--md-accent-fg-color); }
+
+/* ---------- Hero ---------- */
+.hero-badge {
+  display: inline-block;
+  padding: 0.3rem 0.8rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--hero-grad-1);
+  background: color-mix(in srgb, var(--hero-grad-1) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--hero-grad-1) 30%, transparent);
+}
+
+.md-typeset h1.hero-title,
+.hero-title {
+  font-size: 2.6rem;
+  line-height: 1.1;
+  font-weight: 800;
+  margin: 0.6rem 0 0.4rem;
+  background: linear-gradient(
+    100deg,
+    var(--hero-grad-1),
+    var(--hero-grad-2),
+    var(--hero-grad-3)
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: hero-shimmer 8s ease-in-out infinite;
+}
+
+@keyframes hero-shimmer {
+  0%, 100% { background-position: 0% center; }
+  50%      { background-position: 100% center; }
+}
+
+.hero-subtitle {
+  font-size: 1.05rem;
+  max-width: 48rem;
+  color: var(--md-default-fg-color--light);
+}
+
+/* ---------- Cards (grid cards) ---------- */
+.md-typeset .grid.cards > ul > li,
+.md-typeset .grid > .card {
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: 0.8rem;
+  box-shadow: var(--shadow-soft);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+.md-typeset .grid.cards > ul > li:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-pop);
+  border-color: color-mix(in srgb, var(--hero-grad-1) 40%, transparent);
+}
+
+/* ---------- Botões ---------- */
+.md-typeset .md-button {
+  border-radius: 0.6rem;
+  font-weight: 600;
+}
+
+/* ---------- Tabelas ---------- */
+.md-typeset table:not([class]) {
+  box-shadow: var(--shadow-soft);
+  border-radius: 0.6rem;
+  overflow: hidden;
+}
+.md-typeset table:not([class]) th {
+  background: color-mix(in srgb, var(--hero-grad-1) 10%, transparent);
+  font-weight: 700;
+}
+
+/* ---------- Tabs do topo (sticky) ---------- */
+.md-tabs {
+  box-shadow: 0 1px 0 var(--md-default-fg-color--lightest);
+}
+
+/* ---------- Animação reveal (ativada via extra.js) ---------- */
+.reveal { opacity: 0; transform: translateY(14px); }
+.reveal.is-visible {
+  opacity: 1;
+  transform: none;
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}

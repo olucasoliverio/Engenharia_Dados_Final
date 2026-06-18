@@ -158,3 +158,9 @@ airflow dags test bronze_to_silver 2026-06-13
 
 Esta issue não cria agregações ou indicadores de negócio. Essa responsabilidade
 pertence à DAG Silver → Gold.
+
+## Referências
+
+- [Delta Lake — `MERGE`](https://docs.delta.io/latest/delta-update.html)
+- [Apache Spark](https://spark.apache.org/docs/latest/)
+- Página completa de [referências](referencias.md)

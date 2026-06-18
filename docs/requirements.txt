@@ -1,0 +1,3 @@
+# Dependências para construir e publicar a documentação (MkDocs).
+mkdocs-material>=9.5
+pymdown-extensions>=10.7

@@ -161,3 +161,9 @@ manifesto permanecem de acordo com o contrato versionado.
 Esta entrega prepara e valida o armazenamento da Bronze. A leitura da Landing,
 a conversão com Apache Spark e a criação física das tabelas Delta pertencem à
 Issue #16.
+
+## Referências
+
+- [Delta Lake](https://docs.delta.io/latest/index.html)
+- [Apache Spark — Documentação](https://spark.apache.org/docs/latest/)
+- Página completa de [referências](referencias.md)

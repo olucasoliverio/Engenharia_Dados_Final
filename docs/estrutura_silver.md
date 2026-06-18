@@ -157,3 +157,9 @@ compartilhado para estruturas Delta.
 Esta entrega prepara e valida o armazenamento da Silver. A leitura da Bronze,
 as regras de qualidade e a gravação física das tabelas Delta são implementadas
 separadamente pela Issue #17.
+
+## Referências
+
+- [Delta Lake — `MERGE`](https://docs.delta.io/latest/delta-update.html)
+- [Apache Spark](https://spark.apache.org/docs/latest/)
+- Página completa de [referências](referencias.md)

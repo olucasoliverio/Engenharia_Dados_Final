@@ -208,6 +208,13 @@ A definição machine-readable de cada coleção está em
 no formato [`$jsonSchema`](https://www.mongodb.com/docs/manual/core/schema-validation/)
 do MongoDB. Esses validadores são aplicados na criação das coleções (issues #8/#9).
 
+O exemplo abaixo é **lido diretamente do arquivo no repositório** (via
+`pymdownx.snippets`), então acompanha automaticamente qualquer alteração no código:
+
+```json title="mongodb/schemas/clientes.schema.json"
+--8<-- "mongodb/schemas/clientes.schema.json"
+```
+
 ## Observações sobre integridade
 
 Os dados são simulados de forma independente por coleção, então **não há
@@ -220,3 +227,10 @@ garantia de consistência referencial nem aritmética** na origem:
 
 Essas inconsistências são esperadas em uma origem bruta e serão tratadas/
 reconciliadas nas camadas **Silver** e **Gold** do pipeline.
+
+## Referências
+
+- [MongoDB — Documentação](https://www.mongodb.com/docs/)
+- [Schema Validation (`$jsonSchema`)](https://www.mongodb.com/docs/manual/core/schema-validation/)
+- [Faker](https://faker.readthedocs.io/)
+- Página completa de [referências](referencias.md)

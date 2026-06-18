@@ -87,3 +87,9 @@ Basta trocar o `MONGO_URI` no `.env` (ou passar `--uri`):
 # local
 python dataset/scripts_py/carregar_mongo.py --uri "mongodb://admin:admin123@localhost:27017/?authSource=admin"
 ```
+
+## Referências
+
+- [MongoDB Atlas](https://www.mongodb.com/docs/atlas/)
+- [PyMongo — conexões SRV](https://pymongo.readthedocs.io/en/stable/examples/high_availability.html)
+- Página completa de [referências](referencias.md)

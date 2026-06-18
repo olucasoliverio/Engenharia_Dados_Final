@@ -1,0 +1,33 @@
+name: Deploy MkDocs
+
+# Publica a documentação automaticamente sempre que o repositório é atualizado
+# (push na main que toque em docs/, mkdocs.yml ou neste workflow).
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - "mkdocs.yml"
+      - ".github/workflows/mkdocs.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar MkDocs Material
+        run: pip install -r docs/requirements.txt
+
+      - name: Publicar no branch gh-pages
+        run: mkdocs gh-deploy --force --no-history

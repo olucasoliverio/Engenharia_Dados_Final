@@ -160,3 +160,9 @@ airflow dags test silver_to_gold 2026-06-13
 
 Esta issue materializa o modelo analítico Gold. A criação e publicação dos
 dashboards no Power BI ou Superset pertencem à etapa de visualização.
+
+## Referências
+
+- [Kimball — Slowly Changing Dimensions](https://www.kimballgroup.com/2008/08/slowly-changing-dimensions-part-2/)
+- [Delta Lake](https://docs.delta.io/latest/index.html)
+- Página completa de [referências](referencias.md)
