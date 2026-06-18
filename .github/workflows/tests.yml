@@ -1,0 +1,23 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  unittest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Rodar testes unitários
+        # A suíte é autocontida: os testes que dependem de PySpark/PyMongo
+        # são pulados automaticamente quando essas libs não estão presentes.
+        run: python -m unittest discover -s tests -v
