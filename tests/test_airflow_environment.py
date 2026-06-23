@@ -26,16 +26,16 @@ class AirflowEnvironmentConfigTest(unittest.TestCase):
         self.assertIn("postgresql+psycopg2://airflow:airflow@airflow-postgres/airflow", compose)
 
     def test_airflow_requirements_include_dag_providers(self):
-        requirements = {
-            line.strip().split("==", 1)[0]
-            for line in (REPO_ROOT / "requirements-airflow.txt").read_text(
-                encoding="utf-8"
-            ).splitlines()
-            if line.strip() and not line.startswith("#")
-        }
+        import tomllib
 
-        self.assertIn("apache-airflow-providers-amazon", requirements)
-        self.assertIn("apache-airflow-providers-mongo", requirements)
+        pyproject = tomllib.loads(
+            (REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8")
+        )
+        airflow_deps = pyproject["project"]["optional-dependencies"]["airflow"]
+        providers = {dep.split("==", 1)[0].split(">", 1)[0].strip() for dep in airflow_deps}
+
+        self.assertIn("apache-airflow-providers-amazon", providers)
+        self.assertIn("apache-airflow-providers-mongo", providers)
 
     def test_env_example_exposes_airflow_connections(self):
         env_example = (REPO_ROOT / ".env.example").read_text(encoding="utf-8")

@@ -241,8 +241,7 @@ def garantir_csvs(alvos: dict) -> bool:
         subprocess.run([sys.executable, str(gerador)], check=True)
     except subprocess.CalledProcessError as e:
         print(f"ERRO ao gerar os CSVs ({e}).")
-        print("Instale as dependencias de geracao: pip install -r "
-              "dataset/scripts_py/requirements.txt")
+        print('Instale as dependencias de geracao: pip install ".[dataset]"')
         return False
     return True
 

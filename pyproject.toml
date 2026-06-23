@@ -1,0 +1,60 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "engenharia-dados-final"
+version = "0.1.0"
+description = "Pipeline de dados de e-commerce: MongoDB -> Data Lake medalhao (MinIO, Airflow, Spark, Delta Lake)."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [
+  { name = "Guilherme Madalena" },
+  { name = "Gustavo Felisbino" },
+  { name = "Lucas Gaspar" },
+  { name = "Lucas Oliverio" },
+  { name = "Luiz Barros" },
+  { name = "Tiago Mazzuco" },
+]
+
+# Dependencias agrupadas por contexto. Instale apenas o grupo que precisa:
+#   pip install ".[dataset]"   -> gerar/carregar dados no Mongo
+#   pip install ".[infra]"     -> criar a estrutura do Data Lake (MinIO/S3)
+#   pip install ".[spark]"     -> rodar os jobs PySpark localmente
+#   pip install ".[airflow]"   -> providers do Airflow (usado no Dockerfile.airflow)
+#   pip install ".[docs]"      -> construir/publicar a documentacao
+[project.optional-dependencies]
+dataset = [
+  "pymongo>=4.6,<5",
+  "dnspython>=2.0",
+  "faker>=24",
+  "pandas>=2.0",
+]
+infra = [
+  "boto3>=1.35,<2.0",
+]
+spark = [
+  "delta-spark==3.3.1",
+  "pyspark==3.5.3",
+]
+# Sem pin de versao: as constraints oficiais do Airflow (usadas no
+# Dockerfile.airflow) fixam as versoes compativeis com a versao do Airflow.
+airflow = [
+  "apache-airflow-providers-amazon",
+  "apache-airflow-providers-apache-spark",
+  "apache-airflow-providers-mongo",
+]
+docs = [
+  "mkdocs-material>=9.5",
+  "pymdown-extensions>=10.7",
+]
+
+[project.urls]
+Repository = "https://github.com/olucasoliverio/Engenharia_Dados_Final"
+Documentation = "https://olucasoliverio.github.io/Engenharia_Dados_Final/"
+
+# Projeto de dados (nao e uma biblioteca): nao empacotamos modulos, o pyproject
+# serve para gerenciar dependencias por grupo.
+[tool.setuptools]
+py-modules = []

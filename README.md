@@ -58,7 +58,7 @@ viram `null`), cria as 10 coleções com os validadores `$jsonSchema` de
 # com o container de pé (docker compose up -d) e o .env configurado:
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -r dataset/scripts_py/requirements.txt
+pip install ".[dataset]"
 
 # gera os CSVs (se faltarem) e popula o Mongo num passo só:
 python dataset/scripts_py/carregar_mongo.py
@@ -84,8 +84,8 @@ execução.
 
 Para o time acessar a mesma origem, a base também roda em um cluster gratuito no
 MongoDB Atlas. O mesmo `carregar_mongo.py` é usado — muda apenas o `MONGO_URI`
-no `.env` (conexão `mongodb+srv://`, que requer o `dnspython` do
-`requirements.txt`). Passo a passo completo em
+no `.env` (conexão `mongodb+srv://`, que requer o `dnspython` do grupo
+`[dataset]` do `pyproject.toml`). Passo a passo completo em
 [`docs/mongodb_atlas.md`](docs/mongodb_atlas.md).
 
 ## DAG MongoDB Atlas → Landing
@@ -168,7 +168,7 @@ Depois de configurar o `.env`, crie ou valide o bucket e os prefixos da Landing:
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements-infra.txt
+pip install ".[infra]"
 
 set -a
 source .env
