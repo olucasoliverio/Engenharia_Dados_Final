@@ -106,7 +106,7 @@ docker compose up -d minio
 
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements-infra.txt
+pip install ".[infra]"
 
 set -a
 source .env

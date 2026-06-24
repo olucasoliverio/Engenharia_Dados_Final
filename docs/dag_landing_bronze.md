@@ -56,8 +56,8 @@ flowchart LR
 | `dags/landing_to_bronze.py` | Orquestração pelo Airflow e submissão Spark |
 | `dags/lib/landing_bronze.py` | Contratos, caminhos, manifesto e configuração Spark |
 | `spark_jobs/landing_to_bronze.py` | Conversão PySpark para Delta Lake |
-| `requirements-airflow.txt` | Providers usados pelas DAGs |
-| `requirements-spark.txt` | PySpark e Delta Lake |
+| `pyproject.toml` (grupo `[airflow]`) | Providers usados pelas DAGs |
+| `pyproject.toml` (grupo `[spark]`) | PySpark e Delta Lake |
 | `tests/test_landing_bronze.py` | Testes unitários das regras puras |
 
 ## Compatibilidade de versões

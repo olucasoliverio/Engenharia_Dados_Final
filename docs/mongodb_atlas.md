@@ -122,13 +122,13 @@ MONGO_URI=mongodb+srv://app_user:SUASENHA@ecommerce-origem.xxxxx.mongodb.net/?re
 ## Carregar os dados no Atlas
 
 Conexões `mongodb+srv://` exigem o `dnspython` (já listado no
-`dataset/scripts_py/requirements.txt`), usado para resolver os registros SRV do
+`pyproject.toml`, grupo `[dataset]`), usado para resolver os registros SRV do
 cluster:
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -r dataset/scripts_py/requirements.txt
+pip install ".[dataset]"
 
 # le o MONGO_URI do .env e carrega as 10 colecoes no Atlas
 python dataset/scripts_py/carregar_mongo.py

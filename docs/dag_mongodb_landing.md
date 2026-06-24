@@ -68,7 +68,7 @@ A montagem das dependências entre tasks fica no final da função. A extração
 |---|---|
 | `dags/mongodb_to_landing.py` | Definição da DAG e integração com MongoDB/S3 |
 | `dags/lib/mongodb_landing.py` | Regras testáveis de checkpoint, caminhos e serialização |
-| `requirements-airflow.txt` | Providers MongoDB e Amazon/S3 |
+| `pyproject.toml` (grupo `[airflow]`) | Providers MongoDB e Amazon/S3 |
 | `tests/test_mongodb_landing.py` | Testes unitários da lógica de ingestão |
 
 !!! tip "Por que separar a lógica em `lib/`?"
@@ -88,7 +88,7 @@ Os providers são instalados na imagem customizada do Airflow pelo
 docker compose build airflow-apiserver
 ```
 
-O arquivo `requirements-airflow.txt` registra os providers necessários:
+O arquivo `pyproject.toml` (grupo `[airflow]`) registra os providers necessários:
 
 - `apache-airflow-providers-mongo`
 - `apache-airflow-providers-amazon`

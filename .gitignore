@@ -25,3 +25,8 @@ dataset/arquivos_csv/*.csv
 
 # Sistema
 .DS_Store
+
+# Artefatos de build do Python
+*.egg-info/
+build/
+dist/

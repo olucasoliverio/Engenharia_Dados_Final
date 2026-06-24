@@ -27,7 +27,7 @@ jobs:
           python-version: "3.12"
 
       - name: Instalar MkDocs Material
-        run: pip install -r docs/requirements.txt
+        run: pip install ".[docs]"
 
       - name: Publicar no branch gh-pages
         run: mkdocs gh-deploy --force --no-history

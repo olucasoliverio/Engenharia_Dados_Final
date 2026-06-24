@@ -111,7 +111,7 @@ de *constraints* da versão:
 |---|---|
 | `docker-compose.yml` | Stack local com MongoDB, MinIO, Postgres e Airflow |
 | `Dockerfile.airflow` | Imagem customizada baseada em `apache/airflow` |
-| `requirements-airflow.txt` | Providers de MongoDB e Amazon/S3 usados pelas DAGs |
+| `pyproject.toml` (grupo `[airflow]`) | Providers de MongoDB e Amazon/S3 usados pelas DAGs |
 | `.env.example` | Variáveis locais, usuário inicial e Connections do Airflow |
 | `.gitignore` | Ignora logs e configuração local gerada pelo Airflow |
 

@@ -175,7 +175,7 @@ Instale a dependência do inicializador em um ambiente virtual:
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements-infra.txt
+pip install ".[infra]"
 ```
 
 Exporte as variáveis do `.env` e execute:

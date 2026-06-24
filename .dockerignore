@@ -1,0 +1,21 @@
+# Mantem o contexto de build enxuto (o Dockerfile.airflow so usa pyproject.toml + README.md).
+.git
+.github
+.venv
+.venv-spark
+venv
+__pycache__
+*.py[cod]
+.ipynb_checkpoints
+
+# Artefatos e dados pesados / gerados
+site/
+dataset/arquivos_csv/
+*.csv
+
+# Segredos e locais
+.env
+.env.*
+!.env.example
+.DS_Store
+airflow/logs

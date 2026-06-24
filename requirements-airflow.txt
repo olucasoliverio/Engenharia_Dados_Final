@@ -1,3 +1,0 @@
-apache-airflow-providers-amazon==9.29.0
-apache-airflow-providers-apache-spark==6.1.0
-apache-airflow-providers-mongo==5.4.0
