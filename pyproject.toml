@@ -24,6 +24,7 @@ authors = [
 #   pip install ".[spark]"     -> rodar os jobs PySpark localmente
 #   pip install ".[airflow]"   -> providers do Airflow (usado no Dockerfile.airflow)
 #   pip install ".[docs]"      -> construir/publicar a documentacao
+#   pip install ".[notebooks]" -> abrir e executar os notebooks Jupyter na pasta notebooks/
 [project.optional-dependencies]
 dataset = [
   "pymongo>=4.6,<5",
@@ -48,6 +49,10 @@ airflow = [
 docs = [
   "mkdocs-material>=9.5",
   "pymdown-extensions>=10.7",
+]
+notebooks = [
+  "notebook>=7.0",
+  "jupyterlab>=4.0",
 ]
 
 [project.urls]
