@@ -26,8 +26,11 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Instalar MkDocs Material
-        run: pip install ".[docs]"
+      - name: Instalar uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Instalar MkDocs Material (uv)
+        run: uv pip install --system ".[docs]"
 
       - name: Publicar no branch gh-pages
         run: mkdocs gh-deploy --force --no-history

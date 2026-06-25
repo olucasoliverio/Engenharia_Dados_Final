@@ -160,9 +160,9 @@ Com o MinIO ativo e as variáveis do `.env` exportadas:
 ```bash
 docker compose up -d minio
 
-python3 -m venv .venv
+uv venv
 source .venv/bin/activate
-pip install ".[infra]"
+uv pip install ".[infra]"
 
 set -a
 source .env

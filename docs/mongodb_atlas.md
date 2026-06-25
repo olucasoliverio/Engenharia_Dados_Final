@@ -126,9 +126,9 @@ Conexões `mongodb+srv://` exigem o `dnspython` (já listado no
 cluster:
 
 ```bash
-python3 -m venv .venv
+uv venv
 source .venv/bin/activate
-pip install ".[dataset]"
+uv pip install ".[dataset]"
 
 # le o MONGO_URI do .env e carrega as 10 colecoes no Atlas
 python dataset/scripts_py/carregar_mongo.py

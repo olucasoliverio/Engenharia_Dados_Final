@@ -22,8 +22,8 @@ exportamos a Gold para **CSV** e importamos no **Looker Studio** (gratuito,
 ## 1. Exportar a Gold para CSV
 
 ```bash
-python3 -m venv .venv && source .venv/bin/activate
-pip install ".[spark]"
+uv venv && source .venv/bin/activate
+uv pip install ".[spark]"
 python scripts/exportar_gold.py
 ```
 
