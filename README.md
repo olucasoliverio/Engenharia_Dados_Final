@@ -1,310 +1,205 @@
-# Engenharia de Dados — Projeto Final
+<div align="center">
 
-Pipeline de dados de um e-commerce fictício (origem MongoDB → Data Lake medalhão
-→ dashboard). Documentação completa publicada via MkDocs.
+# 🛒 Engenharia de Dados — Pipeline E-commerce
 
-## Integrantes
+**Trabalho Final — Arquitetura Medalhão de ponta a ponta**
 
-- Guilherme Madalena
-- Gustavo Felisbino
-- Lucas Gaspar
-- Lucas Oliverio
-- Luiz Barros
-- Tiago Mazzuco
+Integrantes: **Guilherme Madalena · Gustavo Felisbino · Lucas Gaspar · Lucas Oliverio · Luiz Barros · Tiago Mazzuco**
 
-## Ambiente MongoDB local (origem)
+---
 
-A origem dos dados é um MongoDB rodando em Docker. O modelo das coleções está
-documentado em [`docs/modelo_mongodb.md`](docs/modelo_mongodb.md).
+[![MongoDB](https://img.shields.io/badge/MongoDB-Atlas%20M0-47A248?logo=mongodb&logoColor=white)](https://www.mongodb.com/atlas)
+[![Apache Airflow](https://img.shields.io/badge/Apache%20Airflow-3.2-017CEE?logo=apacheairflow&logoColor=white)](https://airflow.apache.org/)
+[![Apache Spark](https://img.shields.io/badge/Apache%20Spark-3.5-E25A1C?logo=apachespark&logoColor=white)](https://spark.apache.org/)
+[![Delta Lake](https://img.shields.io/badge/Delta%20Lake-3.3-00ADD4?logo=databricks&logoColor=white)](https://delta.io/)
+[![MinIO](https://img.shields.io/badge/MinIO-S3-C72E49?logo=minio&logoColor=white)](https://min.io/)
+[![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![MkDocs Material](https://img.shields.io/badge/Docs-MkDocs%20Material-526CFE?logo=materialformkdocs&logoColor=white)](https://olucasoliverio.github.io/Engenharia_Dados_Final/)
+[![Looker Studio](https://img.shields.io/badge/Dashboard-Looker%20Studio-4285F4?logo=googledatastudio&logoColor=white)](https://lookerstudio.google.com/reporting/24b9c057-5b46-46af-bff3-54688322858e)
+[![Licença MIT](https://img.shields.io/badge/Licença-MIT-green.svg)](LICENSE)
 
-### Pré-requisitos
+</div>
 
-- Docker + Docker Compose
+> [!NOTE]
+> Este README é o **manual operacional** — o que é o projeto, como subir e como rodar.
+> A **explicação conceitual completa** (arquitetura, decisões, cada camada e DAG, com
+> diagramas e o código embutido) está na documentação **MkDocs**:
+> **<https://olucasoliverio.github.io/Engenharia_Dados_Final/>**
 
-### Subir o banco
+---
 
-```bash
-# 1. Crie seu .env a partir do exemplo (não é commitado)
-cp .env.example .env
+## 📋 Sobre o projeto
 
-# 2. Suba o container
-docker compose up -d
+Pipeline de dados **end-to-end** de um **e-commerce fictício**, implementando a
+**arquitetura Medalhão** (Landing → Bronze → Silver → Gold) sobre um **Data Lake**
+em object storage, com origem **NoSQL (MongoDB)**, orquestração em **Apache Airflow**,
+transformação em **Apache Spark / Delta Lake** e entrega em **modelo dimensional**
+consumido por um **dashboard no Looker Studio**.
 
-# 3. Verifique a saúde do container (aguarde STATUS = healthy)
-docker compose ps
+**Domínio:** e-commerce — 10 coleções (clientes, categorias, fornecedores, produtos,
+cupons, pedidos, itens_pedido, pagamentos, entregas, avaliações).
+
+### 🎯 Cobertura do enunciado
+
+| Requisito | Onde |
+|---|---|
+| Origem **NoSQL** (≥10 coleções, ~15k docs, datas em ~3 anos, Faker) | `dataset/` · [docs](https://olucasoliverio.github.io/Engenharia_Dados_Final/modelo_mongodb/) |
+| **Orquestração** (sem cron/Windows) | Apache Airflow — `dags/` (4 DAGs) |
+| **Data Lake** em object storage + **medalhão** | MinIO — camadas Landing/Bronze/Silver/Gold |
+| **Delta Lake** em Bronze/Silver/Gold · JSON na Landing | `spark_jobs/` |
+| Motor de transformação **Apache Spark** | PySpark — `spark_jobs/` |
+| **Modelo dimensional** (fatos + dimensões) | Gold — 4 dimensões + 4 fatos |
+| **SCD Tipo 2** nas dimensões · checkpoint incremental | `silver_to_gold` · `mongodb_to_landing` |
+| **Dashboard** One Page View — 4 KPIs + 2 métricas | [Looker Studio](https://lookerstudio.google.com/reporting/24b9c057-5b46-46af-bff3-54688322858e) · `scripts/exportar_gold.py` |
+| **GitHub**: PRs, issues, branch protegida, **MkDocs**, **CI** | `.github/workflows/` · gh-pages |
+
+---
+
+## 🏗️ Arquitetura
+
+```mermaid
+flowchart LR
+    M[("🍃 MongoDB / Atlas<br/>10 coleções")] -->|"mongodb_to_landing"| L
+    L["🟦 Landing<br/>JSON"] -->|"landing_to_bronze"| B
+    B["🟫 Bronze<br/>Delta"] -->|"bronze_to_silver"| S
+    S["⚪ Silver<br/>Delta · Data Quality"] -->|"silver_to_gold"| G
+    G[("🟡 Gold<br/>4 dim + 4 fatos · SCD2")] -->|"exportar_gold"| D[["📊 Dashboard<br/>Looker Studio"]]
+
+    style L fill:#e2e8f0,stroke:#94a3b8,color:#0f172a
+    style B fill:#fed7aa,stroke:#b45309,color:#7c2d12
+    style S fill:#e2e8f0,stroke:#64748b,color:#0f172a
+    style G fill:#fde68a,stroke:#a16207,color:#713f12
+    style D fill:#dbeafe,stroke:#2563eb,color:#1e3a8a
 ```
 
-O serviço sobe em `localhost:27017` com o banco `ecommerce`. As credenciais e a
-string de conexão ficam no `.env` (veja `.env.example`).
+Orquestração: **4 DAGs** do Airflow, agendadas em sequência e com carga incremental
+por `updated_at`.
 
-### Parar / limpar
+---
 
+## 🧰 Stack e versões
+
+| Componente | Versão | Papel |
+|---|---|---|
+| **MongoDB** | 7 (local) / Atlas M0 | Origem NoSQL |
+| **MinIO** | S3-compatible | Object storage do Data Lake |
+| **Apache Airflow** | 3.2 | Orquestração (4 DAGs) |
+| **Apache Spark / PySpark** | 3.5.3 | Transformações |
+| **Delta Lake** | 3.3.1 | Formato Bronze/Silver/Gold |
+| **PostgreSQL** | 16 | Metastore do Airflow |
+| **Python** | ≥ 3.11 | Scripts e jobs |
+| **MkDocs Material** | 9.5+ | Documentação (gh-pages) |
+| **Looker Studio** | — | Dashboard final |
+
+> Dependências num único **`pyproject.toml`** com grupos opcionais
+> (`.[dataset]`, `.[infra]`, `.[spark]`, `.[airflow]`, `.[docs]`).
+
+---
+
+## ✅ Pré-requisitos
+
+| Ferramenta | Notas |
+|---|---|
+| **Docker + Docker Compose** | Sobe MongoDB, MinIO, Airflow e Postgres |
+| **Python 3.11+** | Scripts locais (carga, export). Use um `venv` |
+| **Git** | Clonar o repositório |
+
+> Os dados (`dataset/arquivos_csv/`) e a saída do dashboard (`gold_export/`) **não são
+> versionados** — são reproduzíveis pelos scripts.
+
+---
+
+## 🚀 Como rodar
+
+### 1. Clonar e configurar
 ```bash
-docker compose down        # para o container (mantém os dados no volume)
-docker compose down -v     # para e APAGA os dados (remove o volume)
+git clone https://github.com/olucasoliverio/Engenharia_Dados_Final.git
+cd Engenharia_Dados_Final
+cp .env.example .env            # ajuste credenciais se quiser
 ```
 
-## Gerar e popular o banco com os dados simulados
-
-Os CSVs em `dataset/arquivos_csv/` **não são versionados** (reproduzíveis e
-pesam ~15 MB). O `carregar_mongo.py` **gera os CSVs automaticamente** quando
-estão ausentes (chamando `gerar_dados.py`) e em seguida carrega no Mongo:
-converte os tipos (datas viram `ISODate`, números viram int/float, campos vazios
-viram `null`), cria as 10 coleções com os validadores `$jsonSchema` de
-`dataset/schemas/` e os índices (chave primária, chaves estrangeiras e
-`updated_at`).
-
+### 2. Subir o MongoDB e popular a origem
 ```bash
-# com o container de pé (docker compose up -d) e o .env configurado:
-python3 -m venv .venv
-source .venv/bin/activate
+docker compose up -d mongodb
+
+python3 -m venv .venv && source .venv/bin/activate
 pip install ".[dataset]"
 
-# gera os CSVs (se faltarem) e popula o Mongo num passo só:
+# gera os CSVs (se faltarem) e carrega as 10 coleções num passo só
 python dataset/scripts_py/carregar_mongo.py
 ```
 
-Os geradores usam sementes fixas, então a saída é determinística. Para só
-(re)gerar os CSVs sem carregar: `python dataset/scripts_py/gerar_dados.py`.
-
-Opções úteis:
-
+### 3. Subir o Data Lake + Airflow e rodar o pipeline
 ```bash
-python dataset/scripts_py/carregar_mongo.py --only pedidos   # uma coleção só
-python dataset/scripts_py/carregar_mongo.py --no-validator   # sem $jsonSchema
-python dataset/scripts_py/carregar_mongo.py --no-gerar       # nao gera CSV ausente
-python dataset/scripts_py/carregar_mongo.py --uri "<MONGO_URI>" --db ecommerce
+docker compose up -d --build minio airflow-apiserver airflow-scheduler \
+  airflow-dag-processor airflow-triggerer
 ```
+- Airflow: <http://localhost:8080> (usuário/senha padrão: `airflow` / `airflow`)
+- MinIO Console: <http://localhost:9001> (`minioadmin` / `minioadmin`)
 
-A conexão é resolvida por `MONGO_URI` / `MONGO_DB` (CLI > variável de ambiente >
-`.env` > default local). O script é idempotente: recria cada coleção a cada
-execução.
+Ative e dispare as DAGs na ordem: `mongodb_to_landing → landing_to_bronze →
+bronze_to_silver → silver_to_gold`.
 
-## MongoDB compartilhado (Atlas)
-
-Para o time acessar a mesma origem, a base também roda em um cluster gratuito no
-MongoDB Atlas. O mesmo `carregar_mongo.py` é usado — muda apenas o `MONGO_URI`
-no `.env` (conexão `mongodb+srv://`, que requer o `dnspython` do grupo
-`[dataset]` do `pyproject.toml`). Passo a passo completo em
-[`docs/mongodb_atlas.md`](docs/mongodb_atlas.md).
-
-## DAG MongoDB Atlas → Landing
-
-A DAG [`mongodb_to_landing`](dags/mongodb_to_landing.py) extrai as dez coleções
-do MongoDB Atlas para o object storage configurado no Airflow. A primeira
-execução realiza uma carga completa; as seguintes usam checkpoints por coleção
-baseados em `updated_at`.
-
-Os documentos são gravados como MongoDB Extended JSON Lines, sem enriquecimento
-ou alteração dos dados da origem:
-
-```text
-landing/ecommerce/<colecao>/extraction_date=AAAA-MM-DD/
-  run_id=<airflow_run_id>/part-00000.json
-```
-
-Configuração das Connections, variáveis, execução e evidências estão
-documentadas em
-[`docs/dag_mongodb_landing.md`](docs/dag_mongodb_landing.md).
-
-## Ambiente Airflow local
-
-O Airflow roda via Docker Compose junto com MongoDB, MinIO e Postgres. O stack
-usa uma imagem customizada baseada em `apache/airflow` para instalar os
-providers de MongoDB e Amazon/S3 usados pela DAG.
-
+### 4. Exportar a Gold para o dashboard
 ```bash
-cp .env.example .env
-
-docker compose up -d --build \
-  mongodb \
-  minio \
-  airflow-apiserver \
-  airflow-scheduler \
-  airflow-dag-processor \
-  airflow-triggerer
+pip install ".[spark]"
+python scripts/exportar_gold.py     # gera gold_export/ (estrela + obt_vendas.csv)
 ```
+Importe `gold_export/obt_vendas.csv` no **Looker Studio**. Passo a passo, relações e as
+medidas (KPIs) em [`docs/dashboard.md`](https://olucasoliverio.github.io/Engenharia_Dados_Final/dashboard/).
 
-Interface: <http://localhost:8080>
-
-Credenciais locais padrão:
-
-```text
-usuario: airflow
-senha: airflow
-```
-
-Valide a importação das DAGs:
-
+### 5. Testes
 ```bash
-docker compose exec airflow-apiserver airflow dags list-import-errors
-docker compose exec airflow-apiserver airflow dags list
+python -m unittest discover -s tests -v
 ```
 
-Detalhes de serviços, Connections e comandos de parada estão em
-[`docs/ambiente_airflow.md`](docs/ambiente_airflow.md).
+---
 
-Testes unitários da lógica de ingestão:
+## 📁 Estrutura do repositório
 
-```bash
-PYTHONPYCACHEPREFIX=/tmp/engenharia_dados_pycache \
-  python3 -m unittest discover -s tests -v
+```
+.
+├── dags/             # DAGs do Airflow (+ lib/)  — orquestração das 4 etapas
+├── spark_jobs/       # Jobs PySpark (landing→bronze→silver→gold)
+├── scripts/          # Infra do Data Lake (criar_estrutura_*) + exportar_gold
+├── dataset/          # Geradores Faker, carregar_mongo e validadores ($jsonSchema)
+├── config/           # Contratos das camadas (*_structure.json)
+├── docs/             # Documentação MkDocs (publicada no gh-pages)
+├── tests/            # Testes unitários (rodam no CI)
+├── docker/           # Dockerfile.airflow
+├── assets/           # Diagramas de arquitetura
+├── docker-compose.yml
+├── pyproject.toml    # Dependências (grupos opcionais)
+├── mkdocs.yml
+└── README.md
 ```
 
-## Estrutura da camada Landing
+---
 
-O MinIO local fornece o object storage do Data Lake:
+## 📚 Documentação e Dashboard
 
-```bash
-docker compose up -d minio
-docker compose ps minio
-```
+| Recurso | Link |
+|---|---|
+| 📖 **Documentação (MkDocs)** | <https://olucasoliverio.github.io/Engenharia_Dados_Final/> |
+| 📊 **Dashboard (Looker Studio)** | <https://lookerstudio.google.com/reporting/24b9c057-5b46-46af-bff3-54688322858e> |
+| 🗂️ **Repositório** | <https://github.com/olucasoliverio/Engenharia_Dados_Final> |
 
-- API S3: <http://localhost:9000>
-- Console: <http://localhost:9001>
+---
 
-Depois de configurar o `.env`, crie ou valide o bucket e os prefixos da Landing:
+## 📊 Dashboard — KPIs e métricas
 
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install ".[infra]"
+One Page View no Looker Studio, consumindo o modelo da Gold:
 
-set -a
-source .env
-set +a
+- **KPIs:** Faturamento total · Quantidade de pedidos · Ticket médio · % de pedidos entregues
+- **Métricas:** Faturamento por mês · Produtos mais vendidos
+- **Filtros:** período · categoria · estado · forma de pagamento
 
-python scripts/criar_estrutura_landing.py
-python scripts/criar_estrutura_landing.py --validate-only
-```
+---
 
-O contrato versionado está em
-[`config/landing_structure.json`](config/landing_structure.json). Detalhes em
-[`docs/estrutura_landing.md`](docs/estrutura_landing.md).
+## 👥 Integrantes
 
-## Estrutura da camada Bronze
+Guilherme Madalena · Gustavo Felisbino · Lucas Gaspar · Lucas Oliverio · Luiz Barros · Tiago Mazzuco
 
-A camada Bronze reserva os prefixos das dez tabelas Delta e registra o contrato
-esperado no MinIO ou Amazon S3:
+## 📄 Licença
 
-```bash
-python scripts/criar_estrutura_bronze.py
-python scripts/criar_estrutura_bronze.py --validate-only
-```
-
-Estrutura preparada:
-
-```text
-bronze/ecommerce/<tabela>/_READY
-bronze/_control/_structure.json
-```
-
-O `_delta_log` e os arquivos Parquet serão criados pela primeira gravação da
-DAG Landing → Bronze. O contrato está em
-[`config/bronze_structure.json`](config/bronze_structure.json), com detalhes em
-[`docs/estrutura_bronze.md`](docs/estrutura_bronze.md).
-
-## DAG Landing → Bronze
-
-A DAG `landing_to_bronze` submete um job PySpark que converte os JSONs da
-Landing para dez tabelas Delta:
-
-```text
-landing/ecommerce/<colecao>/*.json
-  → bronze/ecommerce/<colecao>/_delta_log/
-  → bronze/ecommerce/<colecao>/ingestion_date=AAAA-MM-DD/*.parquet
-```
-
-O processamento é idempotente por arquivo de origem e gera um manifesto de
-auditoria por execução. Configuração completa em
-[`docs/dag_landing_bronze.md`](docs/dag_landing_bronze.md).
-
-## Estrutura da camada Silver
-
-A camada Silver reserva os prefixos das dez tabelas limpas e padronizadas:
-
-```bash
-python scripts/criar_estrutura_silver.py
-python scripts/criar_estrutura_silver.py --validate-only
-```
-
-Estrutura preparada:
-
-```text
-silver/ecommerce/<tabela>/_READY
-silver/_control/_structure.json
-```
-
-A DAG Bronze → Silver cria os arquivos Delta e aplica as regras de
-qualidade. O contrato está em
-[`config/silver_structure.json`](config/silver_structure.json), com detalhes em
-[`docs/estrutura_silver.md`](docs/estrutura_silver.md).
-
-## DAG Bronze → Silver
-
-A DAG `bronze_to_silver` transforma o MongoDB Extended JSON preservado na
-Bronze em dez tabelas Delta tipadas e validadas:
-
-```text
-bronze/ecommerce/<tabela>/
-  → deduplicação, limpeza e validação
-  → silver/ecommerce/<tabela>/_delta_log/
-```
-
-O job mantém o registro mais recente por chave primária, valida domínios e
-relacionamentos e executa `MERGE` incremental. Cada execução gera um manifesto
-com inserções, atualizações, rejeições e duplicatas removidas. Configuração
-completa em
-[`docs/dag_bronze_silver.md`](docs/dag_bronze_silver.md).
-
-## Estrutura da camada Gold
-
-A camada Gold reserva as dimensões e fatos do modelo analítico:
-
-```bash
-python scripts/criar_estrutura_gold.py
-python scripts/criar_estrutura_gold.py --validate-only
-```
-
-Estrutura preparada:
-
-```text
-gold/ecommerce/<dimensao-ou-fato>/_READY
-gold/_control/_structure.json
-```
-
-O modelo possui quatro dimensões e quatro fatos para análises de vendas,
-pagamentos, entregas e avaliações. O contrato está em
-[`config/gold_structure.json`](config/gold_structure.json), com detalhes em
-[`docs/estrutura_gold.md`](docs/estrutura_gold.md).
-
-## DAG Silver → Gold
-
-A DAG `silver_to_gold` materializa o modelo dimensional analítico a partir das
-dez tabelas Silver:
-
-```text
-silver/ecommerce/<tabela>/
-  → dimensões de tempo, cliente, produto e cupom
-  → fatos de vendas, pagamentos, entregas e avaliações
-  → gold/ecommerce/<dimensao-ou-fato>/_delta_log/
-```
-
-O job enriquece produtos com categoria e fornecedor, calcula medidas de
-receita, pagamentos aprovados, prazo e atraso de entregas e classificação das
-avaliações. As tabelas fato são particionadas por ano e sincronizadas por
-`MERGE`, sem duplicar dados em novas execuções. Configuração completa em
-[`docs/dag_silver_gold.md`](docs/dag_silver_gold.md).
-
-## Documentação (MkDocs)
-
-As páginas-fonte ficam em `docs/` e o `mkdocs.yml` na raiz. O diretório `site/`
-(saída do build) **não é versionado** — é gerado localmente e publicado no
-GitHub Pages.
-
-```bash
-pip install mkdocs
-mkdocs serve      # pré-visualização em http://127.0.0.1:8000
-mkdocs build      # gera site/ (local, ignorado pelo git)
-mkdocs gh-deploy  # publica no GitHub Pages
-```
+Distribuído sob a licença **MIT** — veja [LICENSE](LICENSE).
