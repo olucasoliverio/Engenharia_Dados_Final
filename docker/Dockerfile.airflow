@@ -3,6 +3,15 @@ FROM apache/airflow:${AIRFLOW_VERSION}
 
 ARG AIRFLOW_VERSION
 
+# --- Java (necessário para o spark-submit em modo local) -------------------
+USER root
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends default-jre-headless procps \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+ENV JAVA_HOME=/usr/lib/jvm/default-java
+USER airflow
+
 # pyproject.toml e a fonte unica das dependencias. Extraimos o grupo [airflow]
 # (sem empacotar o projeto) e instalamos com as constraints oficiais do Airflow.
 COPY pyproject.toml /tmp/pyproject.toml
@@ -13,3 +22,18 @@ RUN AIRFLOW_PYTHON_VERSION="$(python -c 'import sys; print(f"{sys.version_info.m
       "apache-airflow==${AIRFLOW_VERSION}" \
       -r /tmp/airflow-providers.txt \
       --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-${AIRFLOW_VERSION}/constraints-${AIRFLOW_PYTHON_VERSION}.txt"
+
+# --- Spark + Delta (grupo [spark]) -----------------------------------------
+# Instalado SEM as constraints do Airflow (pyspark/delta-spark não fazem parte
+# delas). O provider Spark traz 'pyspark-client' (Spark Connect 4.x) via
+# constraints; ele compartilha o namespace 'pyspark' e conflita com o pyspark
+# completo, então removemos antes. 'setuptools' garante distutils no Python 3.13.
+RUN python -c "import tomllib; print(chr(10).join(tomllib.load(open('/tmp/pyproject.toml','rb'))['project']['optional-dependencies']['spark']))" > /tmp/spark-deps.txt \
+    && pip uninstall -y pyspark pyspark-client 2>/dev/null || true \
+    && pip install --no-cache-dir setuptools -r /tmp/spark-deps.txt \
+    && ln -sf "$(python -c 'import os,pyspark; print(os.path.dirname(pyspark.__file__))')/bin/spark-submit" /home/airflow/.local/bin/spark-submit
+
+# --- Smoke test do import (sem JVM) ----------------------------------------
+# Os pacotes Maven (Delta + hadoop-aws) são resolvidos na 1ª execução da DAG.
+RUN python -c "import pyspark, delta; print('pyspark', pyspark.__version__)" \
+    && spark-submit --version

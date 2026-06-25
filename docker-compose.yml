@@ -28,8 +28,16 @@ x-airflow-common: &airflow-common
     MONGO_TO_LANDING_SCHEDULE: ${MONGO_TO_LANDING_SCHEDULE:-*/15 * * * *}
     AIRFLOW_CONN_MONGODB_ATLAS: ${AIRFLOW_CONN_MONGODB_ATLAS:-mongo://admin:admin123@mongodb:27017/ecommerce?authSource=admin}
     AIRFLOW_CONN_MINIO_S3: ${AIRFLOW_CONN_MINIO_S3:-aws://minioadmin:minioadmin@/?endpoint_url=http%3A%2F%2Fminio%3A9000&region_name=us-east-1}
+    # Conexão Spark em modo local (spark-submit roda dentro do container do Airflow).
+    # Literal entre aspas: chaves do JSON quebram a interpolação ${VAR:-...} do compose.
+    AIRFLOW_CONN_SPARK_DEFAULT: '{"conn_type": "spark", "host": "local[*]"}'
+    # Credenciais lidas pelo job Spark via EnvironmentVariableCredentialsProvider (S3A).
+    AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-minioadmin}
+    AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-minioadmin}
+    AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION:-us-east-1}
   volumes:
     - ./dags:/opt/airflow/dags
+    - ./spark_jobs:/opt/airflow/spark_jobs
     - ./airflow/logs:/opt/airflow/logs
     - ./airflow/plugins:/opt/airflow/plugins
     - ./airflow/config:/opt/airflow/config

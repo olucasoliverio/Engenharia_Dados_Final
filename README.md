@@ -118,6 +118,17 @@ por `updated_at`.
 
 ## 🚀 Como rodar
 
+> [!TIP]
+> **Caminho rápido (recomendado):** um único comando sobe os containers, popula o
+> MongoDB **e cria a estrutura do Data Lake no MinIO** — deixando o pipeline
+> pronto para as DAGs:
+> ```bash
+> cp .env.example .env
+> ./scripts/setup_ambiente.sh
+> ```
+> Para **zerar tudo e recomeçar do zero**: `./scripts/reset_ambiente.sh`.
+> O passo a passo manual está abaixo.
+
 ### 1. Clonar e configurar
 ```bash
 git clone https://github.com/olucasoliverio/Engenharia_Dados_Final.git
@@ -136,7 +147,7 @@ uv pip install ".[dataset]"
 python dataset/scripts_py/carregar_mongo.py
 ```
 
-### 3. Subir o Data Lake + Airflow e rodar o pipeline
+### 3. Subir o Data Lake + Airflow
 ```bash
 docker compose up -d --build minio airflow-apiserver airflow-scheduler \
   airflow-dag-processor airflow-triggerer
@@ -144,10 +155,25 @@ docker compose up -d --build minio airflow-apiserver airflow-scheduler \
 - Airflow: <http://localhost:8080> (usuário/senha padrão: `airflow` / `airflow`)
 - MinIO Console: <http://localhost:9001> (`minioadmin` / `minioadmin`)
 
-Ative e dispare as DAGs na ordem: `mongodb_to_landing → landing_to_bronze →
-bronze_to_silver → silver_to_gold`.
+### 4. Criar a estrutura do Data Lake no MinIO
+> [!IMPORTANT]
+> Passo **obrigatório antes das DAGs**: cria o bucket `datalake` e as camadas.
+> Sem ele, a 1ª DAG falha com *"Landing bucket 'datalake' does not exist"*.
 
-### 4. Exportar a Gold para o dashboard
+```bash
+pip install ".[infra]"
+export S3_ENDPOINT_URL=http://localhost:9000 \
+  AWS_ACCESS_KEY_ID=minioadmin AWS_SECRET_ACCESS_KEY=minioadmin AWS_DEFAULT_REGION=us-east-1
+for layer in landing bronze silver gold; do python scripts/criar_estrutura_${layer}.py; done
+```
+
+### 5. Rodar o pipeline
+Ative e dispare as DAGs na ordem: `mongodb_to_landing → landing_to_bronze →
+bronze_to_silver → silver_to_gold`. As DAGs Bronze/Silver/Gold rodam **Spark +
+Delta** via `spark-submit` (modo local, embutido na imagem do Airflow); a 1ª
+execução baixa os pacotes Delta/hadoop-aws do Maven.
+
+### 6. Exportar a Gold para o dashboard
 ```bash
 uv pip install ".[spark]"
 python scripts/exportar_gold.py     # gera gold_export/ (estrela + obt_vendas.csv)
@@ -155,7 +181,7 @@ python scripts/exportar_gold.py     # gera gold_export/ (estrela + obt_vendas.cs
 Importe `gold_export/obt_vendas.csv` no **Looker Studio**. Passo a passo, relações e as
 medidas (KPIs) em [`docs/dashboard.md`](https://olucasoliverio.github.io/Engenharia_Dados_Final/dashboard/).
 
-### 5. Testes
+### 7. Testes
 ```bash
 python -m unittest discover -s tests -v
 ```

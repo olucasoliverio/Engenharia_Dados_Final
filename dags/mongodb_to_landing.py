@@ -34,6 +34,26 @@ from lib.mongodb_landing import (
 
 LOGGER = logging.getLogger(__name__)
 
+
+def resolve_logical_date(context) -> datetime:
+    """Return a usable extraction timestamp across Airflow 2 and 3.
+
+    In Airflow 3 a manually triggered run may omit ``logical_date`` from the
+    context (it is nullable), so we fall back to the DAG run's ``run_after``
+    and finally to the current UTC time. Used only to partition the Landing
+    object key by date, so any consistent timestamp is acceptable.
+    """
+    logical_date = context.get("logical_date")
+    if logical_date is None:
+        dag_run = context.get("dag_run")
+        logical_date = getattr(dag_run, "logical_date", None) or getattr(
+            dag_run, "run_after", None
+        )
+    if logical_date is None:
+        logical_date = datetime.now(timezone.utc)
+    return logical_date
+
+
 DAG_ID = "mongodb_to_landing"
 MONGO_CONN_ID = os.getenv("MONGO_CONN_ID", "mongodb_atlas")
 S3_CONN_ID = os.getenv("S3_CONN_ID", "minio_s3")
@@ -90,7 +110,7 @@ def mongodb_to_landing():
     @task
     def extract_collection(collection_name: str) -> dict:
         context = get_current_context()
-        logical_date = context["logical_date"]
+        logical_date = resolve_logical_date(context)
         run_id = context["run_id"]
         variable_key = checkpoint_variable_name(
             MONGO_DATABASE,
@@ -174,7 +194,7 @@ def mongodb_to_landing():
     @task
     def write_run_manifest(results: list[dict]) -> str:
         context = get_current_context()
-        logical_date = context["logical_date"]
+        logical_date = resolve_logical_date(context)
         run_id = context["run_id"]
         manifest_key = build_manifest_key(logical_date, run_id)
         manifest = build_manifest(
