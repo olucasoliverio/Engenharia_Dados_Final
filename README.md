@@ -51,7 +51,7 @@ pesam ~15 MB). O `carregar_mongo.py` **gera os CSVs automaticamente** quando
 estão ausentes (chamando `gerar_dados.py`) e em seguida carrega no Mongo:
 converte os tipos (datas viram `ISODate`, números viram int/float, campos vazios
 viram `null`), cria as 10 coleções com os validadores `$jsonSchema` de
-`mongodb/schemas/` e os índices (chave primária, chaves estrangeiras e
+`dataset/schemas/` e os índices (chave primária, chaves estrangeiras e
 `updated_at`).
 
 ```bash

@@ -26,7 +26,7 @@ Os validadores são usados na criação das coleções (issues #8/#9). Exemplo c
 o shell do MongoDB:
 
 ```js
-const validator = JSON.parse(cat("mongodb/schemas/clientes.schema.json"));
+const validator = JSON.parse(cat("dataset/schemas/clientes.schema.json"));
 db.createCollection("clientes", { validator });
 ```
 
@@ -36,7 +36,7 @@ Ou em Python (`pymongo`), como será feito no script de carga:
 import json
 from pymongo import MongoClient
 
-with open("mongodb/schemas/clientes.schema.json") as f:
+with open("dataset/schemas/clientes.schema.json") as f:
     validator = json.load(f)
 
 db = MongoClient(MONGO_URI)["ecommerce"]

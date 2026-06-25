@@ -68,10 +68,10 @@ flowchart TB
 
 ## :material-image-multiple: Diagramas
 
-Diagramas de arquitetura versionados no repositório (em `architecture_files/`):
+Diagramas de arquitetura versionados no repositório (em `assets/`):
 
-- [Arquitetura do projeto](https://github.com/olucasoliverio/Engenharia_Dados_Final/blob/main/architecture_files/architecture_project.jpg)
-- [Arquitetura — MongoDB](https://github.com/olucasoliverio/Engenharia_Dados_Final/blob/main/architecture_files/architecture_mongoDB.jpg)
+- [Arquitetura do projeto](https://github.com/olucasoliverio/Engenharia_Dados_Final/blob/main/assets/architecture_project.jpg)
+- [Arquitetura — MongoDB](https://github.com/olucasoliverio/Engenharia_Dados_Final/blob/main/assets/architecture_mongoDB.jpg)
 - [Board no Miro](https://miro.com/app/board/uXjVHEnXdmQ=/)
 
 ## Referências

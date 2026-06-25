@@ -390,7 +390,7 @@ inteiros e decimais nativos):
 ## Validação de schema
 
 A definição machine-readable de cada coleção está em
-[`mongodb/schemas/`](https://github.com/olucasoliverio/Engenharia_Dados_Final/tree/main/mongodb/schemas)
+[`dataset/schemas/`](https://github.com/olucasoliverio/Engenharia_Dados_Final/tree/main/dataset/schemas)
 no formato [`$jsonSchema`](https://www.mongodb.com/docs/manual/core/schema-validation/) do
 MongoDB. Esses validadores são aplicados na **criação** das coleções por
 `carregar_mongo.py` (issues #8/#9) e podem ser desativados com `--no-validator`.
@@ -407,14 +407,14 @@ Os exemplos abaixo são **lidos diretamente dos arquivos no repositório** (via
 
 === "clientes.schema.json"
 
-    ```json title="mongodb/schemas/clientes.schema.json"
-    --8<-- "mongodb/schemas/clientes.schema.json"
+    ```json title="dataset/schemas/clientes.schema.json"
+    --8<-- "dataset/schemas/clientes.schema.json"
     ```
 
 === "pedidos.schema.json"
 
-    ```json title="mongodb/schemas/pedidos.schema.json"
-    --8<-- "mongodb/schemas/pedidos.schema.json"
+    ```json title="dataset/schemas/pedidos.schema.json"
+    --8<-- "dataset/schemas/pedidos.schema.json"
     ```
 
 ## Observações sobre integridade

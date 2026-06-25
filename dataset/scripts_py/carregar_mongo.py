@@ -4,7 +4,7 @@ Carga dos dados simulados (CSV) para o MongoDB de origem (issue #9).
 Le os 10 CSVs de `dataset/arquivos_csv/`, converte os tipos (datas viram
 ISODate, numeros viram int/float, `ativo` vira bool, campos vazios viram null)
 e insere em cada colecao do banco `ecommerce`. Aplica os validadores
-`$jsonSchema` definidos em `mongodb/schemas/` (issue #6) e cria indices de
+`$jsonSchema` definidos em `dataset/schemas/` (issue #6) e cria indices de
 chave primaria, chaves estrangeiras e `updated_at` (carga incremental).
 
 Conexao: le `MONGO_URI` e `MONGO_DB` do ambiente ou do arquivo `.env` na raiz
@@ -34,7 +34,7 @@ from pymongo.errors import PyMongoError
 SCRIPT_DIR = Path(__file__).resolve().parent
 REPO_ROOT = SCRIPT_DIR.parent.parent
 CSV_DIR = REPO_ROOT / "dataset" / "arquivos_csv"
-SCHEMA_DIR = REPO_ROOT / "mongodb" / "schemas"
+SCHEMA_DIR = REPO_ROOT / "dataset" / "schemas"
 ENV_FILE = REPO_ROOT / ".env"
 
 DEFAULT_URI = "mongodb://admin:admin123@localhost:27017/?authSource=admin"

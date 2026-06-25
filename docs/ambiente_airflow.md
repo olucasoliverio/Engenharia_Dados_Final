@@ -97,12 +97,12 @@ conexão com o Postgres de metadados e as variáveis das DAGs ficam definidas:
 --8<-- "docker-compose.yml:9:36"
 ```
 
-A imagem é construída a partir de um `Dockerfile.airflow` enxuto, que apenas
+A imagem é construída a partir de um `docker/Dockerfile.airflow` enxuto, que apenas
 instala os providers necessários sobre a imagem oficial, respeitando o arquivo
 de *constraints* da versão:
 
-```dockerfile title="Dockerfile.airflow"
---8<-- "Dockerfile.airflow"
+```dockerfile title="docker/Dockerfile.airflow"
+--8<-- "docker/Dockerfile.airflow"
 ```
 
 ## Arquivos da entrega
@@ -110,7 +110,7 @@ de *constraints* da versão:
 | Arquivo | Responsabilidade |
 |---|---|
 | `docker-compose.yml` | Stack local com MongoDB, MinIO, Postgres e Airflow |
-| `Dockerfile.airflow` | Imagem customizada baseada em `apache/airflow` |
+| `docker/Dockerfile.airflow` | Imagem customizada baseada em `apache/airflow` |
 | `pyproject.toml` (grupo `[airflow]`) | Providers de MongoDB e Amazon/S3 usados pelas DAGs |
 | `.env.example` | Variáveis locais, usuário inicial e Connections do Airflow |
 | `.gitignore` | Ignora logs e configuração local gerada pelo Airflow |
