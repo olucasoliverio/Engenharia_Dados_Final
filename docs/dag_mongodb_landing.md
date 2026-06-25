@@ -82,7 +82,7 @@ A montagem das dependências entre tasks fica no final da função. A extração
 ## Dependências
 
 Os providers são instalados na imagem customizada do Airflow pelo
-`Dockerfile.airflow`, respeitando o arquivo de constraints da versão adotada:
+`docker/Dockerfile.airflow`, respeitando o arquivo de constraints da versão adotada:
 
 ```bash
 docker compose build airflow-apiserver
