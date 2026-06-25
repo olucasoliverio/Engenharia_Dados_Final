@@ -308,3 +308,16 @@ mkdocs serve      # pré-visualização em http://127.0.0.1:8000
 mkdocs build      # gera site/ (local, ignorado pelo git)
 mkdocs gh-deploy  # publica no GitHub Pages
 ```
+
+## Dashboard (Power BI)
+
+O dashboard consome o modelo dimensional da Gold. Como o Power BI não lê Delta
+no MinIO nativamente, exporte a Gold para CSV e importe no Power BI:
+
+```bash
+pip install ".[spark]"
+python scripts/exportar_gold.py   # gera gold_export/<tabela>.csv
+```
+
+Passo a passo (import, relações do esquema estrela e os 4 KPIs + 2 métricas) em
+[`docs/dashboard.md`](docs/dashboard.md).

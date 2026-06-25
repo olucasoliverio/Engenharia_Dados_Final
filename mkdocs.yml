@@ -93,6 +93,7 @@ nav:
       - Landing → Bronze: dag_landing_bronze.md
       - Bronze → Silver: dag_bronze_silver.md
       - Silver → Gold: dag_silver_gold.md
+  - Dashboard (Power BI): dashboard.md
   - Referências: referencias.md
 
 markdown_extensions:

@@ -30,3 +30,6 @@ dataset/arquivos_csv/*.csv
 *.egg-info/
 build/
 dist/
+
+# Export da Gold para BI (gerado por scripts/exportar_gold.py)
+gold_export/
