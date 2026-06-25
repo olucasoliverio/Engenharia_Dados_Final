@@ -1,25 +1,23 @@
 ---
 tags:
   - dashboard
-  - power bi
+  - looker studio
   - gold
   - kpis
 ---
 
-# Dashboard (Power BI)
+# Dashboard (Looker Studio)
 
-O dashboard consome o **modelo dimensional da camada Gold**. Como o Power BI não
-lê Delta Lake no MinIO nativamente — e o Power BI Desktop só roda no Windows —
-exportamos a Gold para **CSV** e importamos no Power BI (Desktop ou
-**Power BI Service** na web, ideal para quem está no macOS/Linux).
+O dashboard consome o **modelo dimensional da camada Gold**. Para visualizar,
+exportamos a Gold para **CSV** e importamos no **Looker Studio** (gratuito,
+100% web — funciona em qualquer SO, inclusive macOS).
 
 !!! abstract "Em resumo"
-    - **Ponte:** `scripts/exportar_gold.py` reconstrói as 4 dimensões + 4 fatos
-      (mesmos builders da DAG Silver → Gold) e grava **um CSV por tabela** em
-      `gold_export/`.
-    - **Modelo:** esquema estrela — os fatos ligam às dimensões por
-      `cliente_key`, `produto_key`, `cupom_key` e `data_key`.
-    - **Entrega (PDF):** One Page View com **4 KPIs + 2 métricas**.
+    - **Ponte:** `scripts/exportar_gold.py` reconstrói a Gold e grava CSVs em
+      `gold_export/`, incluindo a **`obt_vendas.csv`** (tabela única achatada).
+    - **Caminho simples:** no Looker Studio importa-se **só a `obt_vendas.csv`** —
+      uma tabela, **sem criar relações**.
+    - **Entrega (PDF):** One Page View com **4 KPIs + 2 métricas** + filtros.
 
 ## 1. Exportar a Gold para CSV
 
@@ -29,79 +27,68 @@ pip install ".[spark]"
 python scripts/exportar_gold.py
 ```
 
-Gera em `gold_export/`: o **esquema estrela** (`dim_tempo`, `dim_cliente`,
-`dim_produto`, `dim_cupom`, `fato_vendas`, `fato_pagamentos`, `fato_entregas`,
-`fato_avaliacoes`) **e** a **`obt_vendas.csv`** — uma tabela achatada (1 linha
-por item de pedido) com tudo junto.
-
-!!! tip "Caminho simples (recomendado p/ Power BI Service / iniciante)"
-    Importe **apenas `obt_vendas.csv`** — uma tabela só, **sem precisar criar
-    relações**. As medidas DAX abaixo funcionam direto sobre ela
-    (ex.: `Faturamento = SUM(obt_vendas[receita_liquida])`).
+Gera em `gold_export/` o **esquema estrela** (4 dimensões + 4 fatos) **e** a
+**`obt_vendas.csv`** (1 linha por item de pedido, com cliente, produto,
+categoria, valores, pagamento e entrega já juntos).
 
 ??? info "Como o script funciona"
-    Ele lê os CSVs da origem (`dataset/arquivos_csv/`), tipa as colunas e chama
-    os mesmos `MODEL_BUILDERS` de `spark_jobs/silver_to_gold.py` — ou seja, é o
-    modelo dimensional **real**, só que materializado localmente (sem
-    MinIO/Airflow) para facilitar a visualização.
+    Lê os CSVs da origem, tipa as colunas e reaproveita os mesmos
+    `MODEL_BUILDERS` de `spark_jobs/silver_to_gold.py` — é o modelo dimensional
+    **real**, materializado localmente (sem MinIO/Airflow).
 
     ```python title="scripts/exportar_gold.py"
     --8<-- "scripts/exportar_gold.py:55:78"
     ```
 
-## 2. Importar no Power BI
+## 2. Importar no Looker Studio
 
-=== "Power BI Service (web — macOS/Linux)"
+1. Acesse <https://lookerstudio.google.com> (entra com conta Google comum).
+2. **Criar → Fonte de dados → "Upload de arquivos (CSV)"** → envie `gold_export/obt_vendas.csv`.
+3. **Criar relatório** a partir dessa fonte.
 
-    1. Acesse <https://app.powerbi.com> → workspace → **New** → **Semantic model**
-       / **Upload** → **Get data** → **Files** → **Local file**.
-    2. Envie cada CSV de `gold_export/`.
-    3. Monte o relatório (One Page View) com os visuais.
+## 3. KPIs (cartões "Pontuação")
 
-=== "Power BI Desktop (Windows)"
+As 4 métricas, sobre a `obt_vendas`. Duas saem direto de agregações; duas são
+**campos calculados**:
 
-    1. **Get data → Text/CSV** e selecione cada arquivo de `gold_export/`.
-    2. Construa as relações na aba **Model**.
-
-## 3. Relações (esquema estrela)
-
-| Fato (coluna) | → | Dimensão (chave) |
-|---|---|---|
-| `fato_*.cliente_key` | → | `dim_cliente.cliente_key` |
-| `fato_vendas.produto_key`, `fato_avaliacoes.produto_key` | → | `dim_produto.produto_key` |
-| `fato_vendas.cupom_key` | → | `dim_cupom.cupom_key` |
-| `fato_*.data_key` | → | `dim_tempo.data_key` |
-
-!!! tip "Cardinalidade"
-    Todas são **N:1** (muitos fatos para uma dimensão), com a dimensão no lado
-    "1". Deixe `dim_tempo` como a tabela de calendário para análises por período.
-
-## 4. KPIs e métricas (One Page View)
-
-Medidas sugeridas (DAX), conforme definido para o projeto:
-
-### KPIs
-
-| KPI | Medida (DAX) |
+| KPI | Como |
 |---|---|
-| **Faturamento total** | `Faturamento = SUM(fato_vendas[receita_liquida])` |
-| **Qtd. de pedidos** | `Pedidos = DISTINCTCOUNT(fato_vendas[id_pedido])` |
-| **Ticket médio** | `Ticket Medio = DIVIDE([Faturamento], [Pedidos])` |
-| **Taxa de entregas no prazo** | `Entregas no Prazo % = DIVIDE(CALCULATE(COUNTROWS(fato_entregas), fato_entregas[entrega_no_prazo] = TRUE()), COUNTROWS(fato_entregas))` |
+| **Faturamento total** | `SUM(receita_liquida)` (formato Moeda) |
+| **Qtd. de pedidos** | `COUNT_DISTINCT(id_pedido)` |
+| **Ticket médio** | campo calculado abaixo |
+| **% de pedidos entregues** | campo calculado abaixo |
 
-### Métricas
+```
+Ticket Médio = SUM(receita_liquida) / COUNT_DISTINCT(id_pedido)
+```
+
+```
+% Entregues = COUNT_DISTINCT(CASE WHEN status_entrega = "entregue" THEN id_pedido END)
+            / COUNT_DISTINCT(CASE WHEN status_entrega != "" THEN id_pedido END)
+```
+
+!!! warning "Denominador do % Entregues"
+    Use `status_entrega != ""` (e **não** `IS NOT NULL`): no CSV, células vazias
+    chegam como **string vazia**, então `IS NOT NULL` contaria todos os pedidos.
+    Com `!= ""` o índice considera só pedidos **com entrega registrada**.
+
+## 4. Métricas e filtros
 
 | Métrica | Como montar |
 |---|---|
-| **Faturamento por mês** | gráfico de linha: `[Faturamento]` por `dim_tempo[ano_mes]` |
-| **Produtos mais vendidos** | gráfico de barras: `SUM(fato_vendas[quantidade])` por `dim_produto[nome_produto]` (Top N) |
+| **Faturamento por mês** | Gráfico de linhas: dimensão `ano_mes` · métrica `SUM(receita_liquida)` |
+| **Produtos mais vendidos** | Gráfico de barras: dimensão `produto` · métrica `SUM(quantidade)` (Top 10) |
 
-Filtros recomendados (One Page View): período (`dim_tempo`), categoria/marca
-(`dim_produto`), estado (`dim_cliente`) e forma de pagamento (`fato_pagamentos`).
+**Filtros** (controles → Lista suspensa): `ano_mes` (período) · `categoria` ·
+`estado` · `forma_pagamento`. Eles filtram todos os visuais da página.
+
+!!! tip "Valores de referência"
+    Com os dados do projeto, o dashboard deve mostrar aproximadamente:
+    **Faturamento R$ 4,76 mi · Pedidos 9.503 · Ticket R$ 501 · % Entregues 71,9%**.
 
 ## Referências
 
-- [Power BI — Get data de arquivos](https://learn.microsoft.com/power-bi/connect-data/service-comma-separated-value-files)
-- [DAX — referência de funções](https://learn.microsoft.com/dax/)
+- [Looker Studio — Upload de arquivos (CSV)](https://support.google.com/looker-studio/answer/9971178)
+- [Looker Studio — Campos calculados](https://support.google.com/looker-studio/answer/6299685)
 - Modelo dimensional: [DAG Silver → Gold](dag_silver_gold.md)
 - Página completa de [referências](referencias.md)
