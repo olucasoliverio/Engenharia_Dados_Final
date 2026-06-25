@@ -22,8 +22,9 @@ def data_aleatoria(inicio, delta):
 
 registros = []
 for i in range(1, TOTAL + 1):
-    quantidade = random.randint(1, 10)
-    valor_unitario = round(random.uniform(9.90, 2999.90), 2)
+    # Faixas de e-commerce de consumo (ticket medio realista, na casa das centenas).
+    quantidade = random.randint(1, 4)
+    valor_unitario = round(random.uniform(9.90, 289.90), 2)
     desconto = round(random.uniform(0, 0.30), 2)
     subtotal = round(quantidade * valor_unitario * (1 - desconto), 2)
     updated_at = data_aleatoria(inicio, delta_total)

@@ -283,7 +283,7 @@ exatamente ao mapa `COLECOES` de `carregar_mongo.py`.
 | `id_item` | int | sim | Identificador único |
 | `id_pedido` | int | sim | → `pedidos.id_pedido` |
 | `id_produto` | int | sim | → `produtos.id_produto` |
-| `quantidade` | int | sim | Quantidade (1..10) |
+| `quantidade` | int | sim | Quantidade (1..4) |
 | `valor_unitario` | double | sim | Valor unitário |
 | `desconto_percentual` | double | sim | Desconto aplicado (%) |
 | `subtotal` | double | sim | `quantidade * valor_unitario * (1 - desconto)` |
