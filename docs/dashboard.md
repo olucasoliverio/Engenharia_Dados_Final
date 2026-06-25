@@ -29,8 +29,15 @@ pip install ".[spark]"
 python scripts/exportar_gold.py
 ```
 
-Gera em `gold_export/`: `dim_tempo`, `dim_cliente`, `dim_produto`, `dim_cupom`,
-`fato_vendas`, `fato_pagamentos`, `fato_entregas`, `fato_avaliacoes` (`.csv`).
+Gera em `gold_export/`: o **esquema estrela** (`dim_tempo`, `dim_cliente`,
+`dim_produto`, `dim_cupom`, `fato_vendas`, `fato_pagamentos`, `fato_entregas`,
+`fato_avaliacoes`) **e** a **`obt_vendas.csv`** — uma tabela achatada (1 linha
+por item de pedido) com tudo junto.
+
+!!! tip "Caminho simples (recomendado p/ Power BI Service / iniciante)"
+    Importe **apenas `obt_vendas.csv`** — uma tabela só, **sem precisar criar
+    relações**. As medidas DAX abaixo funcionam direto sobre ela
+    (ex.: `Faturamento = SUM(obt_vendas[receita_liquida])`).
 
 ??? info "Como o script funciona"
     Ele lê os CSVs da origem (`dataset/arquivos_csv/`), tipa as colunas e chama

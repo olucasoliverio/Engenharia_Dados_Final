@@ -69,6 +69,81 @@ def ler_origem_tipada(spark) -> dict:
     return silver
 
 
+def build_obt_vendas(spark, silver):
+    """OBT achatada (1 linha por item de pedido) com tudo que o dashboard precisa.
+
+    Junta itens + pedido + cliente + produto/categoria/fornecedor + cupom e traz
+    1 pagamento e 1 entrega por pedido (dedup) para evitar fan-out. Grão = item.
+    """
+    from pyspark.sql import Window
+    from pyspark.sql import functions as F
+
+    def primeiro_por_pedido(df, ordem):
+        w = Window.partitionBy("id_pedido").orderBy(ordem)
+        return df.withColumn("_rn", F.row_number().over(w)).filter("_rn = 1").drop("_rn")
+
+    pag = primeiro_por_pedido(silver["pagamentos"], "id_pagamento").alias("pg")
+    ent = primeiro_por_pedido(silver["entregas"], "id_entrega").alias("e")
+    i = silver["itens_pedido"].alias("i")
+    p = silver["pedidos"].alias("p")
+    c = silver["clientes"].alias("c")
+    pr = silver["produtos"].alias("pr")
+    cat = silver["categorias"].alias("cat")
+    f = silver["fornecedores"].alias("f")
+    cup = silver["cupons"].alias("cup")
+
+    valor_bruto = (F.col("i.quantidade") * F.col("i.valor_unitario")).cast("decimal(18,2)")
+    data_real = F.col("e.data_entrega_real")
+    data_prev = F.col("e.data_entrega_prevista")
+
+    return (
+        i.join(p, F.col("i.id_pedido") == F.col("p.id_pedido"), "inner")
+        .join(c, F.col("p.id_cliente") == F.col("c.id_cliente"), "left")
+        .join(pr, F.col("i.id_produto") == F.col("pr.id_produto"), "left")
+        .join(cat, F.col("pr.id_categoria") == F.col("cat.id_categoria"), "left")
+        .join(f, F.col("pr.id_fornecedor") == F.col("f.id_fornecedor"), "left")
+        .join(cup, F.col("p.id_cupom") == F.col("cup.id_cupom"), "left")
+        .join(pag, F.col("p.id_pedido") == F.col("pg.id_pedido"), "left")
+        .join(ent, F.col("p.id_pedido") == F.col("e.id_pedido"), "left")
+        .select(
+            F.col("i.id_item"),
+            F.col("p.id_pedido"),
+            F.col("p.data_pedido"),
+            F.year("p.data_pedido").alias("ano"),
+            F.date_format("p.data_pedido", "yyyy-MM").alias("ano_mes"),
+            F.col("p.status").alias("status_pedido"),
+            F.col("c.nome").alias("cliente"),
+            F.col("c.cidade"),
+            F.col("c.estado"),
+            F.col("pr.nome_produto").alias("produto"),
+            F.col("cat.nome_categoria").alias("categoria"),
+            F.col("pr.marca"),
+            F.col("cup.codigo").alias("cupom"),
+            F.col("i.quantidade"),
+            F.col("i.valor_unitario"),
+            valor_bruto.alias("valor_bruto"),
+            (valor_bruto - F.col("i.subtotal")).cast("decimal(18,2)").alias("valor_desconto"),
+            F.col("i.subtotal").alias("receita_liquida"),
+            F.col("pg.forma_pagamento"),
+            F.col("pg.status_pagamento"),
+            F.col("e.status_entrega"),
+            F.when(data_real.isNotNull(), data_real <= data_prev).alias("entrega_no_prazo"),
+        )
+    )
+
+
+def _escrever_csv(df, nome: str) -> Path:
+    """Grava um CSV unico (renomeando o part-file do Spark)."""
+    tmp = OUT_DIR / f"_{nome}_tmp"
+    df.coalesce(1).write.mode("overwrite").option("header", True).csv(str(tmp))
+    part = next(tmp.glob("part-*.csv"))
+    destino = OUT_DIR / f"{nome}.csv"
+    destino.unlink(missing_ok=True)
+    part.rename(destino)
+    shutil.rmtree(tmp)
+    return destino
+
+
 def main() -> int:
     spark = criar_spark()
     spark.sparkContext.setLogLevel("ERROR")
@@ -76,23 +151,23 @@ def main() -> int:
     OUT_DIR.mkdir(exist_ok=True)
 
     total = 0
+    # Modelo estrela: 1 CSV por dimensao/fato.
     for model in GOLD_MODELS:
         df = MODEL_BUILDERS[model](spark, silver)
         linhas = df.count()
-        # Escreve um unico CSV com cabecalho e renomeia o part-file do Spark.
-        tmp = OUT_DIR / f"_{model}_tmp"
-        df.coalesce(1).write.mode("overwrite").option("header", True).csv(str(tmp))
-        part = next(tmp.glob("part-*.csv"))
-        destino = OUT_DIR / f"{model}.csv"
-        destino.unlink(missing_ok=True)
-        part.rename(destino)
-        shutil.rmtree(tmp)
-        print(f"  ok {model}: {linhas:,} linhas -> {destino.name}")
+        _escrever_csv(df, model)
+        print(f"  ok {model}: {linhas:,} linhas")
         total += linhas
 
-    print(f"\nConcluido: {total:,} linhas em {len(GOLD_MODELS)} tabelas em {OUT_DIR}/")
-    print("Importe os CSVs no Power BI e ligue os fatos as dimensoes pelas chaves "
-          "(cliente_key, produto_key, cupom_key, data_key).")
+    # OBT achatada (1 tabela so) para o caminho simples no Power BI.
+    obt = build_obt_vendas(spark, silver)
+    linhas_obt = obt.count()
+    _escrever_csv(obt, "obt_vendas")
+    print(f"  ok obt_vendas: {linhas_obt:,} linhas")
+
+    print(f"\nConcluido em {OUT_DIR}/ : estrela ({total:,} linhas em "
+          f"{len(GOLD_MODELS)} tabelas) + obt_vendas ({linhas_obt:,} linhas).")
+    print("Power BI simples: importe apenas obt_vendas.csv.")
     spark.stop()
     return 0
 
