@@ -1,0 +1,3016 @@
+
+<!doctype html>
+<html lang="pt" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Pipeline de dados de e-commerce: MongoDB (origem) → Data Lake medalhão (Landing · Bronze · Silver · Gold) com MinIO, Airflow, Apache Spark e Delta Lake.">
+      
+      
+        <meta name="author" content="Equipe Engenharia de Dados">
+      
+      
+        <link rel="canonical" href="https://olucasoliverio.github.io/Engenharia_Dados_Final/modelo_mongodb/">
+      
+      
+        <link rel="prev" href="../arquitetura/">
+      
+      
+        <link rel="next" href="../mongodb_atlas/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Modelo de dados (origem) - Engenharia de Dados — Projeto Final</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,700,700i%7CJetBrains+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="deep-purple" data-md-color-accent="amber">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#modelo-de-dados-origem-mongodb" class="md-skip">
+          Ir para o conteúdo
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Cabeçalho">
+    <a href=".." title="Engenharia de Dados — Projeto Final" class="md-header__button md-logo" aria-label="Engenharia de Dados — Projeto Final" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 7c0-2.21 3.58-4 8-4s8 1.79 8 4-3.58 4-8 4-8-1.79-8-4m15.72 6.05c.18-.34.28-.69.28-1.05V9c0 2.21-3.58 4-8 4s-8-1.79-8-4v3c0 2.21 3.58 4 8 4 .65 0 1.28-.04 1.88-.11A5.99 5.99 0 0 1 19 13c.24 0 .5 0 .72.05m-6.62 4.91c-.36.04-.73.04-1.1.04-4.42 0-8-1.79-8-4v3c0 2.21 3.58 4 8 4 .46 0 .9 0 1.33-.06A6 6 0 0 1 13 19c0-.36.04-.7.1-1.04M23 19l-3-3v2h-4v2h4v2z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Engenharia de Dados — Projeto Final
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Modelo de dados (origem)
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="deep-purple" data-md-color-accent="amber"  aria-label="Alternar para o modo escuro"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Alternar para o modo escuro" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="deep-purple" data-md-color-accent="amber"  aria-label="Alternar para o modo claro"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Alternar para o modo claro" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Buscar" placeholder="Buscar" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Pesquisar">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="Compartilhar" aria-label="Compartilhar" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91s2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08"/></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="Limpar" aria-label="Limpar" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Inicializando a pesquisa
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/olucasoliverio/Engenharia_Dados_Final" title="Ir ao repositório" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    olucasoliverio/Engenharia_Dados_Final
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Abas" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Início
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../arquitetura/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Arquitetura
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../estrutura_landing/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Camadas (Medalhão)
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../dag_mongodb_landing/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Pipelines (DAGs)
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../dashboard/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Dashboard (Looker Studio)
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../notebooks/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Notebooks (Jupyter)
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../referencias/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Referências
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navegação" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Engenharia de Dados — Projeto Final" class="md-nav__button md-logo" aria-label="Engenharia de Dados — Projeto Final" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 7c0-2.21 3.58-4 8-4s8 1.79 8 4-3.58 4-8 4-8-1.79-8-4m15.72 6.05c.18-.34.28-.69.28-1.05V9c0 2.21-3.58 4-8 4s-8-1.79-8-4v3c0 2.21 3.58 4 8 4 .65 0 1.28-.04 1.88-.11A5.99 5.99 0 0 1 19 13c.24 0 .5 0 .72.05m-6.62 4.91c-.36.04-.73.04-1.1.04-4.42 0-8-1.79-8-4v3c0 2.21 3.58 4 8 4 .46 0 .9 0 1.33-.06A6 6 0 0 1 13 19c0-.36.04-.7.1-1.04M23 19l-3-3v2h-4v2h4v2z"/></svg>
+
+    </a>
+    Engenharia de Dados — Projeto Final
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/olucasoliverio/Engenharia_Dados_Final" title="Ir ao repositório" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    olucasoliverio/Engenharia_Dados_Final
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Início
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Arquitetura
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Arquitetura
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../arquitetura/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Visão geral
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Modelo de dados (origem)
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Modelo de dados (origem)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Índice">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Índice
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#por-que-nosql-como-origem" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Por que NoSQL como origem?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#visao-geral-das-colecoes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Visão geral das coleções
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#diagrama-de-relacionamentos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Diagrama de relacionamentos
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#como-os-dados-sao-gerados" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Como os dados são gerados
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#estrategia-de-carga-incremental" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Estratégia de carga incremental
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#como-os-csvs-viram-documentos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Como os CSVs viram documentos
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dicionario-de-dados" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dicionário de dados
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Dicionário de dados">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-clientes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. clientes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-categorias" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. categorias
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-fornecedores" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. fornecedores
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-produtos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. produtos
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-cupons" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. cupons
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-pedidos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. pedidos
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#7-itens_pedido" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. itens_pedido
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#8-pagamentos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. pagamentos
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#9-entregas" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. entregas
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#10-avaliacoes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. avaliacoes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#exemplos-de-documentos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Exemplos de documentos
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#validacao-de-schema" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Validação de schema
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#observacoes-sobre-integridade" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Observações sobre integridade
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#referencias" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Referências
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../mongodb_atlas/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MongoDB Atlas (compartilhado)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ambiente_airflow/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ambiente Airflow
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Camadas (Medalhão)
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Camadas (Medalhão)
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../estrutura_landing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Landing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../estrutura_bronze/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Bronze
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../estrutura_silver/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Silver
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../estrutura_gold/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gold
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pipelines (DAGs)
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Pipelines (DAGs)
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dag_mongodb_landing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MongoDB → Landing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dag_landing_bronze/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Landing → Bronze
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dag_bronze_silver/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Bronze → Silver
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dag_silver_gold/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Silver → Gold
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dashboard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dashboard (Looker Studio)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../notebooks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Notebooks (Jupyter)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../referencias/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Referências
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Índice">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Índice
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#por-que-nosql-como-origem" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Por que NoSQL como origem?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#visao-geral-das-colecoes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Visão geral das coleções
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#diagrama-de-relacionamentos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Diagrama de relacionamentos
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#como-os-dados-sao-gerados" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Como os dados são gerados
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#estrategia-de-carga-incremental" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Estratégia de carga incremental
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#como-os-csvs-viram-documentos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Como os CSVs viram documentos
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dicionario-de-dados" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dicionário de dados
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Dicionário de dados">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-clientes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. clientes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-categorias" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. categorias
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-fornecedores" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. fornecedores
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-produtos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. produtos
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-cupons" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. cupons
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-pedidos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. pedidos
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#7-itens_pedido" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. itens_pedido
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#8-pagamentos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. pagamentos
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#9-entregas" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. entregas
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#10-avaliacoes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. avaliacoes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#exemplos-de-documentos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Exemplos de documentos
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#validacao-de-schema" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Validação de schema
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#observacoes-sobre-integridade" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Observações sobre integridade
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#referencias" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Referências
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  <nav class="md-tags" >
+    
+      
+      
+      
+      
+        <span class="md-tag">modelagem</span>
+      
+    
+      
+      
+      
+      
+        <span class="md-tag">mongodb</span>
+      
+    
+      
+      
+      
+      
+        <span class="md-tag">origem</span>
+      
+    
+  </nav>
+
+
+  
+    <a href="https://github.com/olucasoliverio/Engenharia_Dados_Final/edit/main/docs/modelo_mongodb.md" title="Editar esta página" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+    
+      
+    
+    <a href="https://github.com/olucasoliverio/Engenharia_Dados_Final/raw/main/docs/modelo_mongodb.md" title="Ver fonte desta página" class="md-content__button md-icon">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 18c.56 0 1 .44 1 1s-.44 1-1 1-1-.44-1-1 .44-1 1-1m0-3c-2.73 0-5.06 1.66-6 4 .94 2.34 3.27 4 6 4s5.06-1.66 6-4c-.94-2.34-3.27-4-6-4m0 6.5a2.5 2.5 0 0 1-2.5-2.5 2.5 2.5 0 0 1 2.5-2.5 2.5 2.5 0 0 1 2.5 2.5 2.5 2.5 0 0 1-2.5 2.5M9.27 20H6V4h7v5h5v4.07c.7.08 1.36.25 2 .49V8l-6-6H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h4.5a8.2 8.2 0 0 1-1.23-2"/></svg>
+    </a>
+  
+
+
+<h1 id="modelo-de-dados-origem-mongodb">Modelo de Dados — Origem MongoDB<a class="headerlink" href="#modelo-de-dados-origem-mongodb" title="Link permanente para esta seção">&para;</a></h1>
+<p>Documentação da modelagem da camada de <strong>origem</strong> do pipeline (issue #6). A origem
+é um banco <strong>NoSQL (MongoDB)</strong> que simula a operação de um e-commerce fictício,
+com dados sintéticos prontos para serem ingeridos pelas camadas Bronze → Silver → Gold.</p>
+<div class="admonition abstract">
+<p class="admonition-title">Em resumo</p>
+<ul>
+<li><strong>Banco:</strong> <code>ecommerce</code> · <strong>Coleções:</strong> 10 · <strong>Volume:</strong> 15.000 documentos por coleção.</li>
+<li><strong>Dados sintéticos</strong> gerados com <a href="https://faker.readthedocs.io/">Faker</a> (locale <code>pt_BR</code>)
+  pelos scripts em <code>dataset/scripts_py/</code>, materializados em CSV em <code>dataset/arquivos_csv/</code>
+  e carregados no Mongo por <a href="#como-os-csvs-viram-documentos"><code>carregar_mongo.py</code></a>.</li>
+<li><strong>Modelagem referenciada</strong> (sem documentos aninhados): coleções separadas ligadas por
+  <strong>IDs inteiros</strong> (<code>1..15000</code>), não por <code>ObjectId</code>.</li>
+<li><strong>Carga incremental</strong> controlada pelo campo <strong><code>updated_at</code></strong> presente em todas as coleções.</li>
+<li><strong>Validação na origem</strong> via <a href="#validacao-de-schema"><code>$jsonSchema</code></a> aplicado na criação de cada coleção.</li>
+</ul>
+</div>
+<h2 id="por-que-nosql-como-origem">Por que NoSQL como origem?<a class="headerlink" href="#por-que-nosql-como-origem" title="Link permanente para esta seção">&para;</a></h2>
+<p>O objetivo do trabalho é exercitar um pipeline de engenharia de dados <strong>de ponta a ponta</strong>,
+e o MongoDB foi escolhido como origem por refletir um cenário realista de sistemas
+transacionais modernos:</p>
+<div class="admonition note">
+<p class="admonition-title">Motivação</p>
+<ul>
+<li><strong>Schema flexível</strong>: documentos JSON/BSON são o formato nativo de muitas aplicações web,
+  então a ingestão precisa lidar com tipos semiestruturados e campos opcionais (ex.: <code>id_cupom</code>
+  e <code>data_entrega_real</code>, que podem ser nulos).</li>
+<li><strong>Heterogeneidade de tipos</strong>: datas como <code>ISODate</code>, números como <code>int</code>/<code>double</code>, flags como
+  <code>bool</code> — exige uma etapa explícita de conversão e tipagem na entrada do pipeline.</li>
+<li><strong>Origem desnormalizada/inconsistente por natureza</strong>: por ser uma base operacional simulada,
+  não há garantia de integridade referencial perfeita, o que justifica as camadas de
+  limpeza/conformação (Silver e Gold).</li>
+</ul>
+</div>
+<p>Apesar de o MongoDB permitir <strong>embedding</strong> (documentos aninhados), a modelagem aqui é
+deliberadamente <strong>referenciada</strong> — uma coleção por entidade ligada por chave inteira. Isso
+mantém a origem próxima de um modelo relacional, facilitando o mapeamento posterior para o
+modelo dimensional (fatos e dimensões) das camadas Silver/Gold.</p>
+<h2 id="visao-geral-das-colecoes">Visão geral das coleções<a class="headerlink" href="#visao-geral-das-colecoes" title="Link permanente para esta seção">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Coleção</th>
+<th style="text-align: right;">Documentos</th>
+<th>Papel</th>
+<th>Chave primária</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><code>clientes</code></td>
+<td style="text-align: right;">15.000</td>
+<td>Cadastro de clientes</td>
+<td><code>id_cliente</code></td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>categorias</code></td>
+<td style="text-align: right;">15.000</td>
+<td>Categorias de produtos</td>
+<td><code>id_categoria</code></td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>fornecedores</code></td>
+<td style="text-align: right;">15.000</td>
+<td>Fornecedores dos produtos</td>
+<td><code>id_fornecedor</code></td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>produtos</code></td>
+<td style="text-align: right;">15.000</td>
+<td>Catálogo de produtos</td>
+<td><code>id_produto</code></td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>cupons</code></td>
+<td style="text-align: right;">15.000</td>
+<td>Cupons de desconto</td>
+<td><code>id_cupom</code></td>
+</tr>
+<tr>
+<td>6</td>
+<td><code>pedidos</code></td>
+<td style="text-align: right;">15.000</td>
+<td>Cabeçalho dos pedidos</td>
+<td><code>id_pedido</code></td>
+</tr>
+<tr>
+<td>7</td>
+<td><code>itens_pedido</code></td>
+<td style="text-align: right;">15.000</td>
+<td>Itens (linhas) dos pedidos</td>
+<td><code>id_item</code></td>
+</tr>
+<tr>
+<td>8</td>
+<td><code>pagamentos</code></td>
+<td style="text-align: right;">15.000</td>
+<td>Pagamentos dos pedidos</td>
+<td><code>id_pagamento</code></td>
+</tr>
+<tr>
+<td>9</td>
+<td><code>entregas</code></td>
+<td style="text-align: right;">15.000</td>
+<td>Entregas dos pedidos</td>
+<td><code>id_entrega</code></td>
+</tr>
+<tr>
+<td>10</td>
+<td><code>avaliacoes</code></td>
+<td style="text-align: right;">15.000</td>
+<td>Avaliações de produtos</td>
+<td><code>id_avaliacao</code></td>
+</tr>
+</tbody>
+</table>
+<div class="admonition info">
+<p class="admonition-title">Janela temporal</p>
+<p>Os campos de data são distribuídos uniformemente entre <code>2023-01-01</code> e <code>2026-06-11</code>
+(≈ 3,5 anos). Os geradores fixam as sementes do <code>Faker</code> e do <code>random</code>
+(<code>Faker.seed(...)</code> / <code>random.seed(...)</code>), portanto <strong>a geração é determinística</strong>:
+rodar os scripts novamente produz exatamente o mesmo dataset.</p>
+</div>
+<h2 id="diagrama-de-relacionamentos">Diagrama de relacionamentos<a class="headerlink" href="#diagrama-de-relacionamentos" title="Link permanente para esta seção">&para;</a></h2>
+<pre class="mermaid"><code>erDiagram
+    clientes      ||--o{ pedidos      : "id_cliente"
+    cupons        |o--o{ pedidos      : "id_cupom (opcional)"
+    pedidos       ||--o{ itens_pedido : "id_pedido"
+    produtos      ||--o{ itens_pedido : "id_produto"
+    categorias    ||--o{ produtos     : "id_categoria"
+    fornecedores  ||--o{ produtos     : "id_fornecedor"
+    pedidos       ||--o{ pagamentos   : "id_pedido"
+    pedidos       ||--o{ entregas     : "id_pedido"
+    pedidos       ||--o{ avaliacoes   : "id_pedido"
+    produtos      ||--o{ avaliacoes   : "id_produto"
+    clientes      ||--o{ avaliacoes   : "id_cliente"</code></pre>
+<div class="admonition warning">
+<p class="admonition-title">Relacionamentos por chave inteira, não por <code>ObjectId</code></p>
+<p>Os relacionamentos são feitos por <strong>chave inteira</strong> (ex.: <code>pedidos.id_cliente</code>
+referencia <code>clientes.id_cliente</code>). Não são usados <code>ObjectId</code> de referência: os IDs
+são sequenciais (<code>1..15000</code>) gerados pelos scripts. As <strong>chaves estrangeiras são
+sorteadas</strong> no intervalo <code>1..15000</code> (ex.: <code>random.randint(1, TOTAL)</code> em
+<code>gerar_pedidos.py</code>), então o MongoDB <strong>não impõe</strong> essa integridade — ela é apenas
+convencional.</p>
+</div>
+<h2 id="como-os-dados-sao-gerados">Como os dados são gerados<a class="headerlink" href="#como-os-dados-sao-gerados" title="Link permanente para esta seção">&para;</a></h2>
+<p>Cada entidade tem seu próprio script em <code>dataset/scripts_py/</code> que produz um CSV. Os
+scripts seguem o mesmo padrão: fixam as sementes, definem listas de domínio (estados,
+status, marcas...) e geram 15.000 registros com IDs sequenciais.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:3"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">clientes</label><label for="__tabbed_1_2">pedidos</label><label for="__tabbed_1_3">produtos</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<p>Datas coerentes entre si: <code>updated_at</code> nunca é anterior a <code>data_cadastro</code> — ele é
+sorteado <strong>dentro da janela que vai do cadastro até o fim do período</strong>.</p>
+<div class="language-python highlight"><span class="filename">dataset/scripts_py/gerar_clientes.py</span><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">registros</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">TOTAL</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">data_cadastro</span> <span class="o">=</span> <span class="n">data_aleatoria</span><span class="p">(</span><span class="n">inicio</span><span class="p">,</span> <span class="n">delta_total</span><span class="p">)</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">updated_at</span> <span class="o">=</span> <span class="n">data_aleatoria</span><span class="p">(</span><span class="n">data_cadastro</span><span class="p">,</span> <span class="p">(</span><span class="n">fim</span> <span class="o">-</span> <span class="n">data_cadastro</span><span class="p">)</span><span class="o">.</span><span class="n">days</span><span class="p">)</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">registros</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>        <span class="p">{</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>            <span class="s2">&quot;id_cliente&quot;</span><span class="p">:</span> <span class="n">i</span><span class="p">,</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>            <span class="s2">&quot;nome&quot;</span><span class="p">:</span> <span class="n">fake</span><span class="o">.</span><span class="n">name</span><span class="p">(),</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>            <span class="s2">&quot;email&quot;</span><span class="p">:</span> <span class="n">fake</span><span class="o">.</span><span class="n">email</span><span class="p">(),</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>            <span class="s2">&quot;cpf&quot;</span><span class="p">:</span> <span class="n">fake</span><span class="o">.</span><span class="n">cpf</span><span class="p">(),</span>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>            <span class="s2">&quot;telefone&quot;</span><span class="p">:</span> <span class="n">fake</span><span class="o">.</span><span class="n">phone_number</span><span class="p">(),</span>
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>            <span class="s2">&quot;data_nascimento&quot;</span><span class="p">:</span> <span class="n">fake</span><span class="o">.</span><span class="n">date_of_birth</span><span class="p">(</span><span class="n">minimum_age</span><span class="o">=</span><span class="mi">18</span><span class="p">,</span> <span class="n">maximum_age</span><span class="o">=</span><span class="mi">75</span><span class="p">)</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>            <span class="s2">&quot;genero&quot;</span><span class="p">:</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">GENEROS</span><span class="p">),</span>
+</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>            <span class="s2">&quot;logradouro&quot;</span><span class="p">:</span> <span class="n">fake</span><span class="o">.</span><span class="n">street_address</span><span class="p">(),</span>
+</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>            <span class="s2">&quot;cidade&quot;</span><span class="p">:</span> <span class="n">fake</span><span class="o">.</span><span class="n">city</span><span class="p">(),</span>
+</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>            <span class="s2">&quot;estado&quot;</span><span class="p">:</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">ESTADOS</span><span class="p">),</span>
+</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>            <span class="s2">&quot;cep&quot;</span><span class="p">:</span> <span class="n">fake</span><span class="o">.</span><span class="n">postcode</span><span class="p">(),</span>
+</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>            <span class="s2">&quot;data_cadastro&quot;</span><span class="p">:</span> <span class="n">data_cadastro</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>            <span class="s2">&quot;updated_at&quot;</span><span class="p">:</span> <span class="n">updated_at</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+</span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>        <span class="p">}</span>
+</span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>    <span class="p">)</span>
+</span></code></pre></div>
+</div>
+<div class="tabbed-block">
+<p>Status com <strong>distribuição ponderada</strong> (<code>entregue</code> ≈ 55%) e cupom presente em
+apenas <strong>25%</strong> dos pedidos (<code>random.random() &lt; 0.25</code>); caso contrário <code>id_cupom</code> é
+<code>None</code>, virando <code>null</code> no Mongo.</p>
+<div class="language-python highlight"><span class="filename">dataset/scripts_py/gerar_pedidos.py</span><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">registros</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">TOTAL</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>    <span class="n">data_pedido</span> <span class="o">=</span> <span class="n">data_aleatoria</span><span class="p">(</span><span class="n">inicio</span><span class="p">,</span> <span class="n">delta_total</span><span class="p">)</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    <span class="n">updated_at</span> <span class="o">=</span> <span class="n">data_aleatoria</span><span class="p">(</span><span class="n">data_pedido</span><span class="p">,</span> <span class="p">(</span><span class="n">fim</span> <span class="o">-</span> <span class="n">data_pedido</span><span class="p">)</span><span class="o">.</span><span class="n">days</span> <span class="ow">or</span> <span class="mi">1</span><span class="p">)</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>    <span class="n">tem_cupom</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&lt;</span> <span class="mf">0.25</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>    <span class="n">registros</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>        <span class="p">{</span>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>            <span class="s2">&quot;id_pedido&quot;</span><span class="p">:</span> <span class="n">i</span><span class="p">,</span>
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>            <span class="s2">&quot;id_cliente&quot;</span><span class="p">:</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">TOTAL</span><span class="p">),</span>
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>            <span class="s2">&quot;data_pedido&quot;</span><span class="p">:</span> <span class="n">data_pedido</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>            <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="n">random</span><span class="o">.</span><span class="n">choices</span><span class="p">(</span><span class="n">STATUS_PEDIDO</span><span class="p">,</span> <span class="n">STATUS_PESOS</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span>
+</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>            <span class="s2">&quot;valor_total&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">20.0</span><span class="p">,</span> <span class="mf">3000.0</span><span class="p">),</span> <span class="mi">2</span><span class="p">),</span>
+</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>            <span class="s2">&quot;id_cupom&quot;</span><span class="p">:</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">TOTAL</span><span class="p">)</span> <span class="k">if</span> <span class="n">tem_cupom</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>            <span class="s2">&quot;updated_at&quot;</span><span class="p">:</span> <span class="n">updated_at</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>        <span class="p">}</span>
+</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>    <span class="p">)</span>
+</span></code></pre></div>
+</div>
+<div class="tabbed-block">
+<p>Nome composto a partir de uma lista de marcas + adjetivo + palavra aleatória; preço
+e peso são <code>float</code> arredondados.</p>
+<div class="language-python highlight"><span class="filename">dataset/scripts_py/gerar_produtos.py</span><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">registros</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">TOTAL</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>    <span class="n">marca</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">MARCAS</span><span class="p">)</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>    <span class="n">adj</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">ADJETIVOS</span><span class="p">)</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>    <span class="n">nome</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">marca</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">adj</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">fake</span><span class="o">.</span><span class="n">word</span><span class="p">()</span><span class="o">.</span><span class="n">capitalize</span><span class="p">()</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span><span class="w"> </span><span class="mi">9999</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>    <span class="n">preco</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">9.90</span><span class="p">,</span> <span class="mf">4999.90</span><span class="p">),</span> <span class="mi">2</span><span class="p">)</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>    <span class="n">updated_at</span> <span class="o">=</span> <span class="n">data_aleatoria</span><span class="p">(</span><span class="n">inicio</span><span class="p">,</span> <span class="n">delta_total</span><span class="p">)</span>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>    <span class="n">registros</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>        <span class="p">{</span>
+</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>            <span class="s2">&quot;id_produto&quot;</span><span class="p">:</span> <span class="n">i</span><span class="p">,</span>
+</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>            <span class="s2">&quot;nome_produto&quot;</span><span class="p">:</span> <span class="n">nome</span><span class="p">,</span>
+</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>            <span class="s2">&quot;descricao&quot;</span><span class="p">:</span> <span class="n">fake</span><span class="o">.</span><span class="n">sentence</span><span class="p">(</span><span class="n">nb_words</span><span class="o">=</span><span class="mi">10</span><span class="p">),</span>
+</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>            <span class="s2">&quot;preco&quot;</span><span class="p">:</span> <span class="n">preco</span><span class="p">,</span>
+</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>            <span class="s2">&quot;estoque&quot;</span><span class="p">:</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">500</span><span class="p">),</span>
+</span><span id="__span-2-15"><a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>            <span class="s2">&quot;id_categoria&quot;</span><span class="p">:</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">TOTAL</span><span class="p">),</span>
+</span><span id="__span-2-16"><a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>            <span class="s2">&quot;id_fornecedor&quot;</span><span class="p">:</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">TOTAL</span><span class="p">),</span>
+</span><span id="__span-2-17"><a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a>            <span class="s2">&quot;marca&quot;</span><span class="p">:</span> <span class="n">marca</span><span class="p">,</span>
+</span><span id="__span-2-18"><a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a>            <span class="s2">&quot;peso_kg&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">30.0</span><span class="p">),</span> <span class="mi">2</span><span class="p">),</span>
+</span><span id="__span-2-19"><a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a>            <span class="s2">&quot;updated_at&quot;</span><span class="p">:</span> <span class="n">updated_at</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+</span><span id="__span-2-20"><a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a>        <span class="p">}</span>
+</span><span id="__span-2-21"><a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a>    <span class="p">)</span>
+</span></code></pre></div>
+</div>
+</div>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">Coerência temporal do <code>updated_at</code></p>
+<p>Em <code>clientes</code> e <code>pedidos</code>, o <code>updated_at</code> é derivado da data de criação:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">updated_at</span> <span class="o">=</span> <span class="n">data_aleatoria</span><span class="p">(</span><span class="n">data_cadastro</span><span class="p">,</span> <span class="p">(</span><span class="n">fim</span> <span class="o">-</span> <span class="n">data_cadastro</span><span class="p">)</span><span class="o">.</span><span class="n">days</span><span class="p">)</span>
+</span></code></pre></div>
+<p>Isso garante <code>data_cadastro &lt;= updated_at &lt;= fim</code>, o que torna a janela de carga
+incremental (abaixo) realista. Já em <code>produtos</code> o <code>updated_at</code> é sorteado livremente
+em toda a janela — um exemplo de inconsistência tolerada na origem bruta.</p>
+</div>
+<h2 id="estrategia-de-carga-incremental">Estratégia de carga incremental<a class="headerlink" href="#estrategia-de-carga-incremental" title="Link permanente para esta seção">&para;</a></h2>
+<p><strong>Todas</strong> as coleções possuem o campo <strong><code>updated_at</code></strong> (data/hora da última alteração do
+documento). Esse campo é o controle usado para a carga incremental do pipeline (issue #30).</p>
+<div class="admonition example">
+<p class="admonition-title">Como funciona</p>
+<ol>
+<li>O pipeline guarda um <strong>checkpoint</strong> — o maior <code>updated_at</code> já processado.</li>
+<li>Na ingestão seguinte, busca apenas documentos com <code>updated_at</code> <strong>maior</strong> que o
+   checkpoint (ex.: <code>{"updated_at": {"$gt": ultimo_checkpoint}}</code>).</li>
+<li>Atualiza o checkpoint para o novo máximo.</li>
+</ol>
+<p>Para tornar essa leitura eficiente, <code>carregar_mongo.py</code> cria um <strong>índice ascendente
+em <code>updated_at</code></strong> em cada coleção (além do índice único da chave primária e dos
+índices de chaves estrangeiras).</p>
+</div>
+<p>Nas camadas de destino, <strong>dimensões</strong> aplicam <strong>SCD Tipo 2</strong> (preservando histórico) e
+<strong>fatos</strong> usam tabela de <strong>checkpoint</strong> para o controle incremental.</p>
+<h2 id="como-os-csvs-viram-documentos">Como os CSVs viram documentos<a class="headerlink" href="#como-os-csvs-viram-documentos" title="Link permanente para esta seção">&para;</a></h2>
+<p>O script <a href="#"><code>carregar_mongo.py</code></a> lê os 10 CSVs, converte cada célula para o tipo BSON
+adequado e insere em lotes de 5.000 documentos. O coração do mapeamento é o dicionário
+<code>COLECOES</code>, que declara, por coleção, quais colunas são inteiras, decimais, booleanas,
+datas e quais são chaves estrangeiras (usadas para criar índices).</p>
+<details class="info">
+<summary>Mapa de tipos por coleção (<code>COLECOES</code>)</summary>
+<p>Este dicionário é a fonte da verdade da tipagem na carga. Cada coleção informa o CSV
+de origem, a chave primária (<code>pk</code>), e as listas <code>int</code>/<code>float</code>/<code>bool</code>/<code>date</code>/<code>fk</code>.</p>
+<div class="language-python highlight"><span class="filename">dataset/scripts_py/carregar_mongo.py</span><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># decimais, booleanas, de data e chaves estrangeiras (para indices).</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="n">COLECOES</span> <span class="o">=</span> <span class="p">{</span>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>    <span class="s2">&quot;clientes&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>        <span class="s2">&quot;csv&quot;</span><span class="p">:</span> <span class="s2">&quot;clientes.csv&quot;</span><span class="p">,</span>
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>        <span class="s2">&quot;pk&quot;</span><span class="p">:</span> <span class="s2">&quot;id_cliente&quot;</span><span class="p">,</span>
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>        <span class="s2">&quot;int&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;id_cliente&quot;</span><span class="p">],</span>
+</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>        <span class="s2">&quot;float&quot;</span><span class="p">:</span> <span class="p">[],</span>
+</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>        <span class="s2">&quot;bool&quot;</span><span class="p">:</span> <span class="p">[],</span>
+</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>        <span class="s2">&quot;date&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;data_nascimento&quot;</span><span class="p">,</span> <span class="s2">&quot;data_cadastro&quot;</span><span class="p">,</span> <span class="s2">&quot;updated_at&quot;</span><span class="p">],</span>
+</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>        <span class="s2">&quot;fk&quot;</span><span class="p">:</span> <span class="p">[],</span>
+</span><span id="__span-4-11"><a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>    <span class="p">},</span>
+</span><span id="__span-4-12"><a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>    <span class="s2">&quot;categorias&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span id="__span-4-13"><a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a>        <span class="s2">&quot;csv&quot;</span><span class="p">:</span> <span class="s2">&quot;categorias.csv&quot;</span><span class="p">,</span>
+</span><span id="__span-4-14"><a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a>        <span class="s2">&quot;pk&quot;</span><span class="p">:</span> <span class="s2">&quot;id_categoria&quot;</span><span class="p">,</span>
+</span><span id="__span-4-15"><a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a>        <span class="s2">&quot;int&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;id_categoria&quot;</span><span class="p">],</span>
+</span><span id="__span-4-16"><a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a>        <span class="s2">&quot;float&quot;</span><span class="p">:</span> <span class="p">[],</span>
+</span><span id="__span-4-17"><a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a>        <span class="s2">&quot;bool&quot;</span><span class="p">:</span> <span class="p">[],</span>
+</span><span id="__span-4-18"><a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a>        <span class="s2">&quot;date&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;updated_at&quot;</span><span class="p">],</span>
+</span><span id="__span-4-19"><a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a>        <span class="s2">&quot;fk&quot;</span><span class="p">:</span> <span class="p">[],</span>
+</span><span id="__span-4-20"><a id="__codelineno-4-20" name="__codelineno-4-20" href="#__codelineno-4-20"></a>    <span class="p">},</span>
+</span><span id="__span-4-21"><a id="__codelineno-4-21" name="__codelineno-4-21" href="#__codelineno-4-21"></a>    <span class="s2">&quot;fornecedores&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span id="__span-4-22"><a id="__codelineno-4-22" name="__codelineno-4-22" href="#__codelineno-4-22"></a>        <span class="s2">&quot;csv&quot;</span><span class="p">:</span> <span class="s2">&quot;fornecedores.csv&quot;</span><span class="p">,</span>
+</span><span id="__span-4-23"><a id="__codelineno-4-23" name="__codelineno-4-23" href="#__codelineno-4-23"></a>        <span class="s2">&quot;pk&quot;</span><span class="p">:</span> <span class="s2">&quot;id_fornecedor&quot;</span><span class="p">,</span>
+</span><span id="__span-4-24"><a id="__codelineno-4-24" name="__codelineno-4-24" href="#__codelineno-4-24"></a>        <span class="s2">&quot;int&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;id_fornecedor&quot;</span><span class="p">],</span>
+</span><span id="__span-4-25"><a id="__codelineno-4-25" name="__codelineno-4-25" href="#__codelineno-4-25"></a>        <span class="s2">&quot;float&quot;</span><span class="p">:</span> <span class="p">[],</span>
+</span><span id="__span-4-26"><a id="__codelineno-4-26" name="__codelineno-4-26" href="#__codelineno-4-26"></a>        <span class="s2">&quot;bool&quot;</span><span class="p">:</span> <span class="p">[],</span>
+</span><span id="__span-4-27"><a id="__codelineno-4-27" name="__codelineno-4-27" href="#__codelineno-4-27"></a>        <span class="s2">&quot;date&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;updated_at&quot;</span><span class="p">],</span>
+</span><span id="__span-4-28"><a id="__codelineno-4-28" name="__codelineno-4-28" href="#__codelineno-4-28"></a>        <span class="s2">&quot;fk&quot;</span><span class="p">:</span> <span class="p">[],</span>
+</span><span id="__span-4-29"><a id="__codelineno-4-29" name="__codelineno-4-29" href="#__codelineno-4-29"></a>    <span class="p">},</span>
+</span><span id="__span-4-30"><a id="__codelineno-4-30" name="__codelineno-4-30" href="#__codelineno-4-30"></a>    <span class="s2">&quot;produtos&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span id="__span-4-31"><a id="__codelineno-4-31" name="__codelineno-4-31" href="#__codelineno-4-31"></a>        <span class="s2">&quot;csv&quot;</span><span class="p">:</span> <span class="s2">&quot;produtos.csv&quot;</span><span class="p">,</span>
+</span><span id="__span-4-32"><a id="__codelineno-4-32" name="__codelineno-4-32" href="#__codelineno-4-32"></a>        <span class="s2">&quot;pk&quot;</span><span class="p">:</span> <span class="s2">&quot;id_produto&quot;</span><span class="p">,</span>
+</span><span id="__span-4-33"><a id="__codelineno-4-33" name="__codelineno-4-33" href="#__codelineno-4-33"></a>        <span class="s2">&quot;int&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;id_produto&quot;</span><span class="p">,</span> <span class="s2">&quot;estoque&quot;</span><span class="p">,</span> <span class="s2">&quot;id_categoria&quot;</span><span class="p">,</span> <span class="s2">&quot;id_fornecedor&quot;</span><span class="p">],</span>
+</span><span id="__span-4-34"><a id="__codelineno-4-34" name="__codelineno-4-34" href="#__codelineno-4-34"></a>        <span class="s2">&quot;float&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;preco&quot;</span><span class="p">,</span> <span class="s2">&quot;peso_kg&quot;</span><span class="p">],</span>
+</span><span id="__span-4-35"><a id="__codelineno-4-35" name="__codelineno-4-35" href="#__codelineno-4-35"></a>        <span class="s2">&quot;bool&quot;</span><span class="p">:</span> <span class="p">[],</span>
+</span><span id="__span-4-36"><a id="__codelineno-4-36" name="__codelineno-4-36" href="#__codelineno-4-36"></a>        <span class="s2">&quot;date&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;updated_at&quot;</span><span class="p">],</span>
+</span><span id="__span-4-37"><a id="__codelineno-4-37" name="__codelineno-4-37" href="#__codelineno-4-37"></a>        <span class="s2">&quot;fk&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;id_categoria&quot;</span><span class="p">,</span> <span class="s2">&quot;id_fornecedor&quot;</span><span class="p">],</span>
+</span><span id="__span-4-38"><a id="__codelineno-4-38" name="__codelineno-4-38" href="#__codelineno-4-38"></a>    <span class="p">},</span>
+</span><span id="__span-4-39"><a id="__codelineno-4-39" name="__codelineno-4-39" href="#__codelineno-4-39"></a>    <span class="s2">&quot;cupons&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span id="__span-4-40"><a id="__codelineno-4-40" name="__codelineno-4-40" href="#__codelineno-4-40"></a>        <span class="s2">&quot;csv&quot;</span><span class="p">:</span> <span class="s2">&quot;cupons.csv&quot;</span><span class="p">,</span>
+</span><span id="__span-4-41"><a id="__codelineno-4-41" name="__codelineno-4-41" href="#__codelineno-4-41"></a>        <span class="s2">&quot;pk&quot;</span><span class="p">:</span> <span class="s2">&quot;id_cupom&quot;</span><span class="p">,</span>
+</span><span id="__span-4-42"><a id="__codelineno-4-42" name="__codelineno-4-42" href="#__codelineno-4-42"></a>        <span class="s2">&quot;int&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;id_cupom&quot;</span><span class="p">,</span> <span class="s2">&quot;desconto_percentual&quot;</span><span class="p">,</span> <span class="s2">&quot;valor_minimo&quot;</span><span class="p">],</span>
+</span><span id="__span-4-43"><a id="__codelineno-4-43" name="__codelineno-4-43" href="#__codelineno-4-43"></a>        <span class="s2">&quot;float&quot;</span><span class="p">:</span> <span class="p">[],</span>
+</span><span id="__span-4-44"><a id="__codelineno-4-44" name="__codelineno-4-44" href="#__codelineno-4-44"></a>        <span class="s2">&quot;bool&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;ativo&quot;</span><span class="p">],</span>
+</span><span id="__span-4-45"><a id="__codelineno-4-45" name="__codelineno-4-45" href="#__codelineno-4-45"></a>        <span class="s2">&quot;date&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;data_validade&quot;</span><span class="p">,</span> <span class="s2">&quot;updated_at&quot;</span><span class="p">],</span>
+</span><span id="__span-4-46"><a id="__codelineno-4-46" name="__codelineno-4-46" href="#__codelineno-4-46"></a>        <span class="s2">&quot;fk&quot;</span><span class="p">:</span> <span class="p">[],</span>
+</span><span id="__span-4-47"><a id="__codelineno-4-47" name="__codelineno-4-47" href="#__codelineno-4-47"></a>    <span class="p">},</span>
+</span><span id="__span-4-48"><a id="__codelineno-4-48" name="__codelineno-4-48" href="#__codelineno-4-48"></a>    <span class="s2">&quot;pedidos&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span id="__span-4-49"><a id="__codelineno-4-49" name="__codelineno-4-49" href="#__codelineno-4-49"></a>        <span class="s2">&quot;csv&quot;</span><span class="p">:</span> <span class="s2">&quot;pedidos.csv&quot;</span><span class="p">,</span>
+</span><span id="__span-4-50"><a id="__codelineno-4-50" name="__codelineno-4-50" href="#__codelineno-4-50"></a>        <span class="s2">&quot;pk&quot;</span><span class="p">:</span> <span class="s2">&quot;id_pedido&quot;</span><span class="p">,</span>
+</span><span id="__span-4-51"><a id="__codelineno-4-51" name="__codelineno-4-51" href="#__codelineno-4-51"></a>        <span class="s2">&quot;int&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;id_pedido&quot;</span><span class="p">,</span> <span class="s2">&quot;id_cliente&quot;</span><span class="p">,</span> <span class="s2">&quot;id_cupom&quot;</span><span class="p">],</span>
+</span><span id="__span-4-52"><a id="__codelineno-4-52" name="__codelineno-4-52" href="#__codelineno-4-52"></a>        <span class="s2">&quot;float&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;valor_total&quot;</span><span class="p">],</span>
+</span><span id="__span-4-53"><a id="__codelineno-4-53" name="__codelineno-4-53" href="#__codelineno-4-53"></a>        <span class="s2">&quot;bool&quot;</span><span class="p">:</span> <span class="p">[],</span>
+</span><span id="__span-4-54"><a id="__codelineno-4-54" name="__codelineno-4-54" href="#__codelineno-4-54"></a>        <span class="s2">&quot;date&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;data_pedido&quot;</span><span class="p">,</span> <span class="s2">&quot;updated_at&quot;</span><span class="p">],</span>
+</span><span id="__span-4-55"><a id="__codelineno-4-55" name="__codelineno-4-55" href="#__codelineno-4-55"></a>        <span class="s2">&quot;fk&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;id_cliente&quot;</span><span class="p">,</span> <span class="s2">&quot;id_cupom&quot;</span><span class="p">],</span>
+</span><span id="__span-4-56"><a id="__codelineno-4-56" name="__codelineno-4-56" href="#__codelineno-4-56"></a>    <span class="p">},</span>
+</span><span id="__span-4-57"><a id="__codelineno-4-57" name="__codelineno-4-57" href="#__codelineno-4-57"></a>    <span class="s2">&quot;itens_pedido&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span id="__span-4-58"><a id="__codelineno-4-58" name="__codelineno-4-58" href="#__codelineno-4-58"></a>        <span class="s2">&quot;csv&quot;</span><span class="p">:</span> <span class="s2">&quot;itens_pedido.csv&quot;</span><span class="p">,</span>
+</span><span id="__span-4-59"><a id="__codelineno-4-59" name="__codelineno-4-59" href="#__codelineno-4-59"></a>        <span class="s2">&quot;pk&quot;</span><span class="p">:</span> <span class="s2">&quot;id_item&quot;</span><span class="p">,</span>
+</span><span id="__span-4-60"><a id="__codelineno-4-60" name="__codelineno-4-60" href="#__codelineno-4-60"></a>        <span class="s2">&quot;int&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;id_item&quot;</span><span class="p">,</span> <span class="s2">&quot;id_pedido&quot;</span><span class="p">,</span> <span class="s2">&quot;id_produto&quot;</span><span class="p">,</span> <span class="s2">&quot;quantidade&quot;</span><span class="p">],</span>
+</span><span id="__span-4-61"><a id="__codelineno-4-61" name="__codelineno-4-61" href="#__codelineno-4-61"></a>        <span class="s2">&quot;float&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;valor_unitario&quot;</span><span class="p">,</span> <span class="s2">&quot;desconto_percentual&quot;</span><span class="p">,</span> <span class="s2">&quot;subtotal&quot;</span><span class="p">],</span>
+</span><span id="__span-4-62"><a id="__codelineno-4-62" name="__codelineno-4-62" href="#__codelineno-4-62"></a>        <span class="s2">&quot;bool&quot;</span><span class="p">:</span> <span class="p">[],</span>
+</span><span id="__span-4-63"><a id="__codelineno-4-63" name="__codelineno-4-63" href="#__codelineno-4-63"></a>        <span class="s2">&quot;date&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;updated_at&quot;</span><span class="p">],</span>
+</span><span id="__span-4-64"><a id="__codelineno-4-64" name="__codelineno-4-64" href="#__codelineno-4-64"></a>        <span class="s2">&quot;fk&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;id_pedido&quot;</span><span class="p">,</span> <span class="s2">&quot;id_produto&quot;</span><span class="p">],</span>
+</span><span id="__span-4-65"><a id="__codelineno-4-65" name="__codelineno-4-65" href="#__codelineno-4-65"></a>    <span class="p">},</span>
+</span><span id="__span-4-66"><a id="__codelineno-4-66" name="__codelineno-4-66" href="#__codelineno-4-66"></a>    <span class="s2">&quot;pagamentos&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span id="__span-4-67"><a id="__codelineno-4-67" name="__codelineno-4-67" href="#__codelineno-4-67"></a>        <span class="s2">&quot;csv&quot;</span><span class="p">:</span> <span class="s2">&quot;pagamentos.csv&quot;</span><span class="p">,</span>
+</span><span id="__span-4-68"><a id="__codelineno-4-68" name="__codelineno-4-68" href="#__codelineno-4-68"></a>        <span class="s2">&quot;pk&quot;</span><span class="p">:</span> <span class="s2">&quot;id_pagamento&quot;</span><span class="p">,</span>
+</span><span id="__span-4-69"><a id="__codelineno-4-69" name="__codelineno-4-69" href="#__codelineno-4-69"></a>        <span class="s2">&quot;int&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;id_pagamento&quot;</span><span class="p">,</span> <span class="s2">&quot;id_pedido&quot;</span><span class="p">,</span> <span class="s2">&quot;parcelas&quot;</span><span class="p">],</span>
+</span><span id="__span-4-70"><a id="__codelineno-4-70" name="__codelineno-4-70" href="#__codelineno-4-70"></a>        <span class="s2">&quot;float&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;valor&quot;</span><span class="p">],</span>
+</span><span id="__span-4-71"><a id="__codelineno-4-71" name="__codelineno-4-71" href="#__codelineno-4-71"></a>        <span class="s2">&quot;bool&quot;</span><span class="p">:</span> <span class="p">[],</span>
+</span><span id="__span-4-72"><a id="__codelineno-4-72" name="__codelineno-4-72" href="#__codelineno-4-72"></a>        <span class="s2">&quot;date&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;data_pagamento&quot;</span><span class="p">,</span> <span class="s2">&quot;updated_at&quot;</span><span class="p">],</span>
+</span><span id="__span-4-73"><a id="__codelineno-4-73" name="__codelineno-4-73" href="#__codelineno-4-73"></a>        <span class="s2">&quot;fk&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;id_pedido&quot;</span><span class="p">],</span>
+</span><span id="__span-4-74"><a id="__codelineno-4-74" name="__codelineno-4-74" href="#__codelineno-4-74"></a>    <span class="p">},</span>
+</span><span id="__span-4-75"><a id="__codelineno-4-75" name="__codelineno-4-75" href="#__codelineno-4-75"></a>    <span class="s2">&quot;entregas&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span id="__span-4-76"><a id="__codelineno-4-76" name="__codelineno-4-76" href="#__codelineno-4-76"></a>        <span class="s2">&quot;csv&quot;</span><span class="p">:</span> <span class="s2">&quot;entregas.csv&quot;</span><span class="p">,</span>
+</span><span id="__span-4-77"><a id="__codelineno-4-77" name="__codelineno-4-77" href="#__codelineno-4-77"></a>        <span class="s2">&quot;pk&quot;</span><span class="p">:</span> <span class="s2">&quot;id_entrega&quot;</span><span class="p">,</span>
+</span><span id="__span-4-78"><a id="__codelineno-4-78" name="__codelineno-4-78" href="#__codelineno-4-78"></a>        <span class="s2">&quot;int&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;id_entrega&quot;</span><span class="p">,</span> <span class="s2">&quot;id_pedido&quot;</span><span class="p">],</span>
+</span><span id="__span-4-79"><a id="__codelineno-4-79" name="__codelineno-4-79" href="#__codelineno-4-79"></a>        <span class="s2">&quot;float&quot;</span><span class="p">:</span> <span class="p">[],</span>
+</span><span id="__span-4-80"><a id="__codelineno-4-80" name="__codelineno-4-80" href="#__codelineno-4-80"></a>        <span class="s2">&quot;bool&quot;</span><span class="p">:</span> <span class="p">[],</span>
+</span><span id="__span-4-81"><a id="__codelineno-4-81" name="__codelineno-4-81" href="#__codelineno-4-81"></a>        <span class="s2">&quot;date&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;data_envio&quot;</span><span class="p">,</span> <span class="s2">&quot;data_entrega_prevista&quot;</span><span class="p">,</span> <span class="s2">&quot;data_entrega_real&quot;</span><span class="p">,</span> <span class="s2">&quot;updated_at&quot;</span><span class="p">],</span>
+</span><span id="__span-4-82"><a id="__codelineno-4-82" name="__codelineno-4-82" href="#__codelineno-4-82"></a>        <span class="s2">&quot;fk&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;id_pedido&quot;</span><span class="p">],</span>
+</span><span id="__span-4-83"><a id="__codelineno-4-83" name="__codelineno-4-83" href="#__codelineno-4-83"></a>    <span class="p">},</span>
+</span><span id="__span-4-84"><a id="__codelineno-4-84" name="__codelineno-4-84" href="#__codelineno-4-84"></a>    <span class="s2">&quot;avaliacoes&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span id="__span-4-85"><a id="__codelineno-4-85" name="__codelineno-4-85" href="#__codelineno-4-85"></a>        <span class="s2">&quot;csv&quot;</span><span class="p">:</span> <span class="s2">&quot;avaliacoes.csv&quot;</span><span class="p">,</span>
+</span><span id="__span-4-86"><a id="__codelineno-4-86" name="__codelineno-4-86" href="#__codelineno-4-86"></a>        <span class="s2">&quot;pk&quot;</span><span class="p">:</span> <span class="s2">&quot;id_avaliacao&quot;</span><span class="p">,</span>
+</span><span id="__span-4-87"><a id="__codelineno-4-87" name="__codelineno-4-87" href="#__codelineno-4-87"></a>        <span class="s2">&quot;int&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;id_avaliacao&quot;</span><span class="p">,</span> <span class="s2">&quot;id_pedido&quot;</span><span class="p">,</span> <span class="s2">&quot;id_cliente&quot;</span><span class="p">,</span> <span class="s2">&quot;id_produto&quot;</span><span class="p">,</span> <span class="s2">&quot;nota&quot;</span><span class="p">],</span>
+</span><span id="__span-4-88"><a id="__codelineno-4-88" name="__codelineno-4-88" href="#__codelineno-4-88"></a>        <span class="s2">&quot;float&quot;</span><span class="p">:</span> <span class="p">[],</span>
+</span><span id="__span-4-89"><a id="__codelineno-4-89" name="__codelineno-4-89" href="#__codelineno-4-89"></a>        <span class="s2">&quot;bool&quot;</span><span class="p">:</span> <span class="p">[],</span>
+</span><span id="__span-4-90"><a id="__codelineno-4-90" name="__codelineno-4-90" href="#__codelineno-4-90"></a>        <span class="s2">&quot;date&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;data_avaliacao&quot;</span><span class="p">,</span> <span class="s2">&quot;updated_at&quot;</span><span class="p">],</span>
+</span><span id="__span-4-91"><a id="__codelineno-4-91" name="__codelineno-4-91" href="#__codelineno-4-91"></a>        <span class="s2">&quot;fk&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;id_pedido&quot;</span><span class="p">,</span> <span class="s2">&quot;id_cliente&quot;</span><span class="p">,</span> <span class="s2">&quot;id_produto&quot;</span><span class="p">],</span>
+</span><span id="__span-4-92"><a id="__codelineno-4-92" name="__codelineno-4-92" href="#__codelineno-4-92"></a>    <span class="p">},</span>
+</span></code></pre></div>
+</details>
+<p>A conversão de cada célula segue regras simples e explícitas — campos vazios viram
+<code>null</code>, datas ISO viram <code>datetime</code> (ISODate), e o resto cai no tipo declarado:</p>
+<div class="language-python highlight"><span class="filename">dataset/scripts_py/carregar_mongo.py</span><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">converter_valor</span><span class="p">(</span><span class="n">valor</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">coluna</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">tipos</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">object</span><span class="p">:</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Converte uma celula do CSV para o tipo BSON adequado.&quot;&quot;&quot;</span>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>    <span class="k">if</span> <span class="n">valor</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">valor</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>        <span class="k">return</span> <span class="kc">None</span>
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>    <span class="k">if</span> <span class="n">coluna</span> <span class="ow">in</span> <span class="n">tipos</span><span class="p">[</span><span class="s2">&quot;int&quot;</span><span class="p">]:</span>
+</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">valor</span><span class="p">))</span> <span class="k">if</span> <span class="n">valor</span> <span class="k">else</span> <span class="kc">None</span>
+</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>    <span class="k">if</span> <span class="n">coluna</span> <span class="ow">in</span> <span class="n">tipos</span><span class="p">[</span><span class="s2">&quot;float&quot;</span><span class="p">]:</span>
+</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">valor</span><span class="p">)</span>
+</span><span id="__span-5-9"><a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>    <span class="k">if</span> <span class="n">coluna</span> <span class="ow">in</span> <span class="n">tipos</span><span class="p">[</span><span class="s2">&quot;bool&quot;</span><span class="p">]:</span>
+</span><span id="__span-5-10"><a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">valor</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;true&quot;</span><span class="p">,</span> <span class="s2">&quot;1&quot;</span><span class="p">,</span> <span class="s2">&quot;sim&quot;</span><span class="p">)</span>
+</span><span id="__span-5-11"><a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>    <span class="k">if</span> <span class="n">coluna</span> <span class="ow">in</span> <span class="n">tipos</span><span class="p">[</span><span class="s2">&quot;date&quot;</span><span class="p">]:</span>
+</span><span id="__span-5-12"><a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a>        <span class="k">return</span> <span class="n">datetime</span><span class="o">.</span><span class="n">fromisoformat</span><span class="p">(</span><span class="n">valor</span><span class="p">)</span>
+</span></code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">Detalhes da carga</p>
+<ul>
+<li><strong>Idempotência</strong>: a coleção é recriada a cada execução (<code>db.drop_collection(nome)</code>
+  seguido de <code>create_collection</code>), então rodar o script de novo regenera o estado.</li>
+<li><strong>Booleanos</strong> aceitam <code>true</code>, <code>1</code> ou <code>sim</code> (case-insensitive) como verdadeiro.</li>
+<li><strong>Inteiros</strong> passam por <code>int(float(valor))</code>, tolerando valores como <code>"3.0"</code>.</li>
+<li><strong>Inserção em lote</strong> com <code>insert_many(..., ordered=False)</code> para desempenho.</li>
+<li><strong>Índices</strong> criados ao final: PK única, cada FK e <code>updated_at</code>.</li>
+</ul>
+</div>
+<p>A criação da coleção, a inserção em lote e os índices ficam em <code>carregar_colecao</code>:</p>
+<div class="language-python highlight"><span class="filename">dataset/scripts_py/carregar_mongo.py</span><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  ! CSV nao encontrado: </span><span class="si">{</span><span class="n">csv_path</span><span class="si">}</span><span class="s2"> — pulando&quot;</span><span class="p">)</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>        <span class="k">return</span> <span class="mi">0</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>    <span class="c1"># Recria a colecao (idempotente).</span>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>    <span class="n">db</span><span class="o">.</span><span class="n">drop_collection</span><span class="p">(</span><span class="n">nome</span><span class="p">)</span>
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>    <span class="n">validador</span> <span class="o">=</span> <span class="n">carregar_validador</span><span class="p">(</span><span class="n">nome</span><span class="p">)</span> <span class="k">if</span> <span class="n">usar_validador</span> <span class="k">else</span> <span class="kc">None</span>
+</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>    <span class="k">if</span> <span class="n">validador</span><span class="p">:</span>
+</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>        <span class="n">db</span><span class="o">.</span><span class="n">create_collection</span><span class="p">(</span><span class="n">nome</span><span class="p">,</span> <span class="n">validator</span><span class="o">=</span><span class="n">validador</span><span class="p">)</span>
+</span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>    <span class="k">else</span><span class="p">:</span>
+</span><span id="__span-6-10"><a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>        <span class="n">db</span><span class="o">.</span><span class="n">create_collection</span><span class="p">(</span><span class="n">nome</span><span class="p">)</span>
+</span><span id="__span-6-11"><a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a>    <span class="n">colecao</span> <span class="o">=</span> <span class="n">db</span><span class="p">[</span><span class="n">nome</span><span class="p">]</span>
+</span><span id="__span-6-12"><a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a>
+</span><span id="__span-6-13"><a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a>    <span class="n">total</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span id="__span-6-14"><a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a>    <span class="n">lote</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span id="__span-6-15"><a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a>    <span class="k">for</span> <span class="n">doc</span> <span class="ow">in</span> <span class="n">ler_documentos</span><span class="p">(</span><span class="n">csv_path</span><span class="p">,</span> <span class="n">tipos</span><span class="p">):</span>
+</span><span id="__span-6-16"><a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a>        <span class="n">lote</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">doc</span><span class="p">)</span>
+</span><span id="__span-6-17"><a id="__codelineno-6-17" name="__codelineno-6-17" href="#__codelineno-6-17"></a>        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">lote</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">BATCH_SIZE</span><span class="p">:</span>
+</span><span id="__span-6-18"><a id="__codelineno-6-18" name="__codelineno-6-18" href="#__codelineno-6-18"></a>            <span class="n">colecao</span><span class="o">.</span><span class="n">insert_many</span><span class="p">(</span><span class="n">lote</span><span class="p">,</span> <span class="n">ordered</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</span><span id="__span-6-19"><a id="__codelineno-6-19" name="__codelineno-6-19" href="#__codelineno-6-19"></a>            <span class="n">total</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">lote</span><span class="p">)</span>
+</span><span id="__span-6-20"><a id="__codelineno-6-20" name="__codelineno-6-20" href="#__codelineno-6-20"></a>            <span class="n">lote</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span id="__span-6-21"><a id="__codelineno-6-21" name="__codelineno-6-21" href="#__codelineno-6-21"></a>    <span class="k">if</span> <span class="n">lote</span><span class="p">:</span>
+</span><span id="__span-6-22"><a id="__codelineno-6-22" name="__codelineno-6-22" href="#__codelineno-6-22"></a>        <span class="n">colecao</span><span class="o">.</span><span class="n">insert_many</span><span class="p">(</span><span class="n">lote</span><span class="p">,</span> <span class="n">ordered</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</span><span id="__span-6-23"><a id="__codelineno-6-23" name="__codelineno-6-23" href="#__codelineno-6-23"></a>        <span class="n">total</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">lote</span><span class="p">)</span>
+</span><span id="__span-6-24"><a id="__codelineno-6-24" name="__codelineno-6-24" href="#__codelineno-6-24"></a>
+</span><span id="__span-6-25"><a id="__codelineno-6-25" name="__codelineno-6-25" href="#__codelineno-6-25"></a>    <span class="c1"># Indices: chave primaria (unica), chaves estrangeiras e updated_at.</span>
+</span><span id="__span-6-26"><a id="__codelineno-6-26" name="__codelineno-6-26" href="#__codelineno-6-26"></a>    <span class="n">colecao</span><span class="o">.</span><span class="n">create_index</span><span class="p">([(</span><span class="n">tipos</span><span class="p">[</span><span class="s2">&quot;pk&quot;</span><span class="p">],</span> <span class="n">ASCENDING</span><span class="p">)],</span> <span class="n">unique</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span id="__span-6-27"><a id="__codelineno-6-27" name="__codelineno-6-27" href="#__codelineno-6-27"></a>    <span class="k">for</span> <span class="n">fk</span> <span class="ow">in</span> <span class="n">tipos</span><span class="p">[</span><span class="s2">&quot;fk&quot;</span><span class="p">]:</span>
+</span><span id="__span-6-28"><a id="__codelineno-6-28" name="__codelineno-6-28" href="#__codelineno-6-28"></a>        <span class="n">colecao</span><span class="o">.</span><span class="n">create_index</span><span class="p">([(</span><span class="n">fk</span><span class="p">,</span> <span class="n">ASCENDING</span><span class="p">)])</span>
+</span><span id="__span-6-29"><a id="__codelineno-6-29" name="__codelineno-6-29" href="#__codelineno-6-29"></a>    <span class="n">colecao</span><span class="o">.</span><span class="n">create_index</span><span class="p">([(</span><span class="s2">&quot;updated_at&quot;</span><span class="p">,</span> <span class="n">ASCENDING</span><span class="p">)])</span>
+</span></code></pre></div>
+<hr />
+<h2 id="dicionario-de-dados">Dicionário de dados<a class="headerlink" href="#dicionario-de-dados" title="Link permanente para esta seção">&para;</a></h2>
+<p>Tipos expressos em <strong>BSON</strong>. Campos de data são armazenados como <code>date</code> (ISODate), não
+como string. As colunas listadas como <code>int</code>/<code>float</code>/<code>bool</code>/<code>date</code> abaixo correspondem
+exatamente ao mapa <code>COLECOES</code> de <code>carregar_mongo.py</code>.</p>
+<h3 id="1-clientes">1. <code>clientes</code><a class="headerlink" href="#1-clientes" title="Link permanente para esta seção">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Tipo</th>
+<th style="text-align: center;">Obrigatório</th>
+<th>Descrição</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id_cliente</code></td>
+<td>int</td>
+<td style="text-align: center;">sim</td>
+<td>Identificador único (1..15000)</td>
+</tr>
+<tr>
+<td><code>nome</code></td>
+<td>string</td>
+<td style="text-align: center;">sim</td>
+<td>Nome completo</td>
+</tr>
+<tr>
+<td><code>email</code></td>
+<td>string</td>
+<td style="text-align: center;">sim</td>
+<td>E-mail</td>
+</tr>
+<tr>
+<td><code>cpf</code></td>
+<td>string</td>
+<td style="text-align: center;">sim</td>
+<td>CPF formatado</td>
+</tr>
+<tr>
+<td><code>telefone</code></td>
+<td>string</td>
+<td style="text-align: center;">sim</td>
+<td>Telefone</td>
+</tr>
+<tr>
+<td><code>data_nascimento</code></td>
+<td>date</td>
+<td style="text-align: center;">sim</td>
+<td>Data de nascimento (idade 18..75)</td>
+</tr>
+<tr>
+<td><code>genero</code></td>
+<td>string</td>
+<td style="text-align: center;">sim</td>
+<td><code>M</code>, <code>F</code> ou <code>Outro</code> (validado por <code>enum</code>)</td>
+</tr>
+<tr>
+<td><code>logradouro</code></td>
+<td>string</td>
+<td style="text-align: center;">sim</td>
+<td>Endereço</td>
+</tr>
+<tr>
+<td><code>cidade</code></td>
+<td>string</td>
+<td style="text-align: center;">sim</td>
+<td>Cidade</td>
+</tr>
+<tr>
+<td><code>estado</code></td>
+<td>string</td>
+<td style="text-align: center;">sim</td>
+<td>UF (sigla de exatamente 2 letras)</td>
+</tr>
+<tr>
+<td><code>cep</code></td>
+<td>string</td>
+<td style="text-align: center;">sim</td>
+<td>CEP</td>
+</tr>
+<tr>
+<td><code>data_cadastro</code></td>
+<td>date</td>
+<td style="text-align: center;">sim</td>
+<td>Data de cadastro</td>
+</tr>
+<tr>
+<td><code>updated_at</code></td>
+<td>date</td>
+<td style="text-align: center;">sim</td>
+<td>Última atualização (≥ <code>data_cadastro</code>) — carga incremental</td>
+</tr>
+</tbody>
+</table>
+<h3 id="2-categorias">2. <code>categorias</code><a class="headerlink" href="#2-categorias" title="Link permanente para esta seção">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Tipo</th>
+<th style="text-align: center;">Obrigatório</th>
+<th>Descrição</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id_categoria</code></td>
+<td>int</td>
+<td style="text-align: center;">sim</td>
+<td>Identificador único</td>
+</tr>
+<tr>
+<td><code>nome_categoria</code></td>
+<td>string</td>
+<td style="text-align: center;">sim</td>
+<td>Nome da categoria</td>
+</tr>
+<tr>
+<td><code>descricao</code></td>
+<td>string</td>
+<td style="text-align: center;">sim</td>
+<td>Descrição</td>
+</tr>
+<tr>
+<td><code>updated_at</code></td>
+<td>date</td>
+<td style="text-align: center;">sim</td>
+<td>Última atualização</td>
+</tr>
+</tbody>
+</table>
+<h3 id="3-fornecedores">3. <code>fornecedores</code><a class="headerlink" href="#3-fornecedores" title="Link permanente para esta seção">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Tipo</th>
+<th style="text-align: center;">Obrigatório</th>
+<th>Descrição</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id_fornecedor</code></td>
+<td>int</td>
+<td style="text-align: center;">sim</td>
+<td>Identificador único</td>
+</tr>
+<tr>
+<td><code>nome_fornecedor</code></td>
+<td>string</td>
+<td style="text-align: center;">sim</td>
+<td>Razão social</td>
+</tr>
+<tr>
+<td><code>cnpj</code></td>
+<td>string</td>
+<td style="text-align: center;">sim</td>
+<td>CNPJ formatado</td>
+</tr>
+<tr>
+<td><code>email</code></td>
+<td>string</td>
+<td style="text-align: center;">sim</td>
+<td>E-mail corporativo</td>
+</tr>
+<tr>
+<td><code>telefone</code></td>
+<td>string</td>
+<td style="text-align: center;">sim</td>
+<td>Telefone</td>
+</tr>
+<tr>
+<td><code>logradouro</code></td>
+<td>string</td>
+<td style="text-align: center;">sim</td>
+<td>Endereço</td>
+</tr>
+<tr>
+<td><code>cidade</code></td>
+<td>string</td>
+<td style="text-align: center;">sim</td>
+<td>Cidade</td>
+</tr>
+<tr>
+<td><code>estado</code></td>
+<td>string</td>
+<td style="text-align: center;">sim</td>
+<td>UF</td>
+</tr>
+<tr>
+<td><code>cep</code></td>
+<td>string</td>
+<td style="text-align: center;">sim</td>
+<td>CEP</td>
+</tr>
+<tr>
+<td><code>updated_at</code></td>
+<td>date</td>
+<td style="text-align: center;">sim</td>
+<td>Última atualização</td>
+</tr>
+</tbody>
+</table>
+<h3 id="4-produtos">4. <code>produtos</code><a class="headerlink" href="#4-produtos" title="Link permanente para esta seção">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Tipo</th>
+<th style="text-align: center;">Obrigatório</th>
+<th>Descrição</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id_produto</code></td>
+<td>int</td>
+<td style="text-align: center;">sim</td>
+<td>Identificador único</td>
+</tr>
+<tr>
+<td><code>nome_produto</code></td>
+<td>string</td>
+<td style="text-align: center;">sim</td>
+<td>Nome do produto (marca + adjetivo + palavra)</td>
+</tr>
+<tr>
+<td><code>descricao</code></td>
+<td>string</td>
+<td style="text-align: center;">sim</td>
+<td>Descrição</td>
+</tr>
+<tr>
+<td><code>preco</code></td>
+<td>double</td>
+<td style="text-align: center;">sim</td>
+<td>Preço de venda (≈ 9,90..4999,90)</td>
+</tr>
+<tr>
+<td><code>estoque</code></td>
+<td>int</td>
+<td style="text-align: center;">sim</td>
+<td>Quantidade em estoque (0..500)</td>
+</tr>
+<tr>
+<td><code>id_categoria</code></td>
+<td>int</td>
+<td style="text-align: center;">sim</td>
+<td>→ <code>categorias.id_categoria</code></td>
+</tr>
+<tr>
+<td><code>id_fornecedor</code></td>
+<td>int</td>
+<td style="text-align: center;">sim</td>
+<td>→ <code>fornecedores.id_fornecedor</code></td>
+</tr>
+<tr>
+<td><code>marca</code></td>
+<td>string</td>
+<td style="text-align: center;">sim</td>
+<td>Marca</td>
+</tr>
+<tr>
+<td><code>peso_kg</code></td>
+<td>double</td>
+<td style="text-align: center;">sim</td>
+<td>Peso em kg (0,1..30,0)</td>
+</tr>
+<tr>
+<td><code>updated_at</code></td>
+<td>date</td>
+<td style="text-align: center;">sim</td>
+<td>Última atualização</td>
+</tr>
+</tbody>
+</table>
+<h3 id="5-cupons">5. <code>cupons</code><a class="headerlink" href="#5-cupons" title="Link permanente para esta seção">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Tipo</th>
+<th style="text-align: center;">Obrigatório</th>
+<th>Descrição</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id_cupom</code></td>
+<td>int</td>
+<td style="text-align: center;">sim</td>
+<td>Identificador único</td>
+</tr>
+<tr>
+<td><code>codigo</code></td>
+<td>string</td>
+<td style="text-align: center;">sim</td>
+<td>Código do cupom (único)</td>
+</tr>
+<tr>
+<td><code>desconto_percentual</code></td>
+<td>int</td>
+<td style="text-align: center;">sim</td>
+<td>Percentual de desconto (5..50)</td>
+</tr>
+<tr>
+<td><code>valor_minimo</code></td>
+<td>int</td>
+<td style="text-align: center;">sim</td>
+<td>Valor mínimo da compra</td>
+</tr>
+<tr>
+<td><code>data_validade</code></td>
+<td>date</td>
+<td style="text-align: center;">sim</td>
+<td>Validade do cupom</td>
+</tr>
+<tr>
+<td><code>ativo</code></td>
+<td>bool</td>
+<td style="text-align: center;">sim</td>
+<td>Cupom ativo</td>
+</tr>
+<tr>
+<td><code>updated_at</code></td>
+<td>date</td>
+<td style="text-align: center;">sim</td>
+<td>Última atualização</td>
+</tr>
+</tbody>
+</table>
+<h3 id="6-pedidos">6. <code>pedidos</code><a class="headerlink" href="#6-pedidos" title="Link permanente para esta seção">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Tipo</th>
+<th style="text-align: center;">Obrigatório</th>
+<th>Descrição</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id_pedido</code></td>
+<td>int</td>
+<td style="text-align: center;">sim</td>
+<td>Identificador único</td>
+</tr>
+<tr>
+<td><code>id_cliente</code></td>
+<td>int</td>
+<td style="text-align: center;">sim</td>
+<td>→ <code>clientes.id_cliente</code></td>
+</tr>
+<tr>
+<td><code>data_pedido</code></td>
+<td>date</td>
+<td style="text-align: center;">sim</td>
+<td>Data do pedido</td>
+</tr>
+<tr>
+<td><code>status</code></td>
+<td>string</td>
+<td style="text-align: center;">sim</td>
+<td><code>pendente</code>, <code>processando</code>, <code>enviado</code>, <code>entregue</code>, <code>cancelado</code> (ponderado: <code>entregue</code> ≈ 55%)</td>
+</tr>
+<tr>
+<td><code>valor_total</code></td>
+<td>double</td>
+<td style="text-align: center;">sim</td>
+<td>Valor total do pedido (20,00..3000,00)</td>
+</tr>
+<tr>
+<td><code>id_cupom</code></td>
+<td>int | null</td>
+<td style="text-align: center;">não</td>
+<td>→ <code>cupons.id_cupom</code> (nulo em ≈ 75% dos pedidos)</td>
+</tr>
+<tr>
+<td><code>updated_at</code></td>
+<td>date</td>
+<td style="text-align: center;">sim</td>
+<td>Última atualização (≥ <code>data_pedido</code>)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="7-itens_pedido">7. <code>itens_pedido</code><a class="headerlink" href="#7-itens_pedido" title="Link permanente para esta seção">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Tipo</th>
+<th style="text-align: center;">Obrigatório</th>
+<th>Descrição</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id_item</code></td>
+<td>int</td>
+<td style="text-align: center;">sim</td>
+<td>Identificador único</td>
+</tr>
+<tr>
+<td><code>id_pedido</code></td>
+<td>int</td>
+<td style="text-align: center;">sim</td>
+<td>→ <code>pedidos.id_pedido</code></td>
+</tr>
+<tr>
+<td><code>id_produto</code></td>
+<td>int</td>
+<td style="text-align: center;">sim</td>
+<td>→ <code>produtos.id_produto</code></td>
+</tr>
+<tr>
+<td><code>quantidade</code></td>
+<td>int</td>
+<td style="text-align: center;">sim</td>
+<td>Quantidade (1..4)</td>
+</tr>
+<tr>
+<td><code>valor_unitario</code></td>
+<td>double</td>
+<td style="text-align: center;">sim</td>
+<td>Valor unitário</td>
+</tr>
+<tr>
+<td><code>desconto_percentual</code></td>
+<td>double</td>
+<td style="text-align: center;">sim</td>
+<td>Desconto aplicado (%)</td>
+</tr>
+<tr>
+<td><code>subtotal</code></td>
+<td>double</td>
+<td style="text-align: center;">sim</td>
+<td><code>quantidade * valor_unitario * (1 - desconto)</code></td>
+</tr>
+<tr>
+<td><code>updated_at</code></td>
+<td>date</td>
+<td style="text-align: center;">sim</td>
+<td>Última atualização</td>
+</tr>
+</tbody>
+</table>
+<h3 id="8-pagamentos">8. <code>pagamentos</code><a class="headerlink" href="#8-pagamentos" title="Link permanente para esta seção">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Tipo</th>
+<th style="text-align: center;">Obrigatório</th>
+<th>Descrição</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id_pagamento</code></td>
+<td>int</td>
+<td style="text-align: center;">sim</td>
+<td>Identificador único</td>
+</tr>
+<tr>
+<td><code>id_pedido</code></td>
+<td>int</td>
+<td style="text-align: center;">sim</td>
+<td>→ <code>pedidos.id_pedido</code></td>
+</tr>
+<tr>
+<td><code>forma_pagamento</code></td>
+<td>string</td>
+<td style="text-align: center;">sim</td>
+<td><code>cartao_credito</code>, <code>cartao_debito</code>, <code>pix</code>, <code>boleto</code></td>
+</tr>
+<tr>
+<td><code>status_pagamento</code></td>
+<td>string</td>
+<td style="text-align: center;">sim</td>
+<td><code>aprovado</code>, <code>pendente</code>, <code>recusado</code>, <code>estornado</code></td>
+</tr>
+<tr>
+<td><code>valor</code></td>
+<td>double</td>
+<td style="text-align: center;">sim</td>
+<td>Valor pago</td>
+</tr>
+<tr>
+<td><code>data_pagamento</code></td>
+<td>date</td>
+<td style="text-align: center;">sim</td>
+<td>Data do pagamento</td>
+</tr>
+<tr>
+<td><code>parcelas</code></td>
+<td>int</td>
+<td style="text-align: center;">sim</td>
+<td>Nº de parcelas (1..12)</td>
+</tr>
+<tr>
+<td><code>updated_at</code></td>
+<td>date</td>
+<td style="text-align: center;">sim</td>
+<td>Última atualização</td>
+</tr>
+</tbody>
+</table>
+<h3 id="9-entregas">9. <code>entregas</code><a class="headerlink" href="#9-entregas" title="Link permanente para esta seção">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Tipo</th>
+<th style="text-align: center;">Obrigatório</th>
+<th>Descrição</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id_entrega</code></td>
+<td>int</td>
+<td style="text-align: center;">sim</td>
+<td>Identificador único</td>
+</tr>
+<tr>
+<td><code>id_pedido</code></td>
+<td>int</td>
+<td style="text-align: center;">sim</td>
+<td>→ <code>pedidos.id_pedido</code></td>
+</tr>
+<tr>
+<td><code>status_entrega</code></td>
+<td>string</td>
+<td style="text-align: center;">sim</td>
+<td><code>pendente</code>, <code>em_transito</code>, <code>entregue</code>, <code>devolvido</code></td>
+</tr>
+<tr>
+<td><code>data_envio</code></td>
+<td>date</td>
+<td style="text-align: center;">sim</td>
+<td>Data de envio</td>
+</tr>
+<tr>
+<td><code>data_entrega_prevista</code></td>
+<td>date</td>
+<td style="text-align: center;">sim</td>
+<td>Previsão de entrega</td>
+</tr>
+<tr>
+<td><code>data_entrega_real</code></td>
+<td>date | null</td>
+<td style="text-align: center;">não</td>
+<td>Entrega efetiva (nulo se não entregue)</td>
+</tr>
+<tr>
+<td><code>transportadora</code></td>
+<td>string</td>
+<td style="text-align: center;">sim</td>
+<td><code>Correios</code>, <code>JadLog</code>, <code>Total Express</code>, <code>Loggi</code>, <code>Azul Cargo</code>, <code>Latam Cargo</code>, <code>DHL</code>, <code>FedEx</code></td>
+</tr>
+<tr>
+<td><code>codigo_rastreio</code></td>
+<td>string</td>
+<td style="text-align: center;">sim</td>
+<td>Código de rastreio</td>
+</tr>
+<tr>
+<td><code>updated_at</code></td>
+<td>date</td>
+<td style="text-align: center;">sim</td>
+<td>Última atualização</td>
+</tr>
+</tbody>
+</table>
+<h3 id="10-avaliacoes">10. <code>avaliacoes</code><a class="headerlink" href="#10-avaliacoes" title="Link permanente para esta seção">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Tipo</th>
+<th style="text-align: center;">Obrigatório</th>
+<th>Descrição</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id_avaliacao</code></td>
+<td>int</td>
+<td style="text-align: center;">sim</td>
+<td>Identificador único</td>
+</tr>
+<tr>
+<td><code>id_pedido</code></td>
+<td>int</td>
+<td style="text-align: center;">sim</td>
+<td>→ <code>pedidos.id_pedido</code></td>
+</tr>
+<tr>
+<td><code>id_cliente</code></td>
+<td>int</td>
+<td style="text-align: center;">sim</td>
+<td>→ <code>clientes.id_cliente</code></td>
+</tr>
+<tr>
+<td><code>id_produto</code></td>
+<td>int</td>
+<td style="text-align: center;">sim</td>
+<td>→ <code>produtos.id_produto</code></td>
+</tr>
+<tr>
+<td><code>nota</code></td>
+<td>int</td>
+<td style="text-align: center;">sim</td>
+<td>Nota de 1 a 5</td>
+</tr>
+<tr>
+<td><code>comentario</code></td>
+<td>string</td>
+<td style="text-align: center;">sim</td>
+<td>Comentário textual</td>
+</tr>
+<tr>
+<td><code>data_avaliacao</code></td>
+<td>date</td>
+<td style="text-align: center;">sim</td>
+<td>Data da avaliação</td>
+</tr>
+<tr>
+<td><code>updated_at</code></td>
+<td>date</td>
+<td style="text-align: center;">sim</td>
+<td>Última atualização</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="exemplos-de-documentos">Exemplos de documentos<a class="headerlink" href="#exemplos-de-documentos" title="Link permanente para esta seção">&para;</a></h2>
+<p>Como ficam os documentos no MongoDB depois da conversão de tipos (datas como ISODate,
+inteiros e decimais nativos):</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:3"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><input id="__tabbed_2_3" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">clientes</label><label for="__tabbed_2_2">pedidos (com cupom)</label><label for="__tabbed_2_3">pedidos (sem cupom)</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="language-json highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="p">{</span>
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">  </span><span class="nt">&quot;_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ObjectId(&#39;...&#39;)&quot;</span><span class="p">,</span>
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">  </span><span class="nt">&quot;id_cliente&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">  </span><span class="nt">&quot;nome&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Ana Beatriz da Rocha&quot;</span><span class="p">,</span>
+</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="w">  </span><span class="nt">&quot;email&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ana.rocha@example.com&quot;</span><span class="p">,</span>
+</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="w">  </span><span class="nt">&quot;cpf&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;123.456.789-00&quot;</span><span class="p">,</span>
+</span><span id="__span-7-7"><a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="w">  </span><span class="nt">&quot;telefone&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;+55 11 99999-0001&quot;</span><span class="p">,</span>
+</span><span id="__span-7-8"><a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="w">  </span><span class="nt">&quot;data_nascimento&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ISODate(&#39;1990-04-12T00:00:00Z&#39;)&quot;</span><span class="p">,</span>
+</span><span id="__span-7-9"><a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="w">  </span><span class="nt">&quot;genero&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;F&quot;</span><span class="p">,</span>
+</span><span id="__span-7-10"><a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a><span class="w">  </span><span class="nt">&quot;logradouro&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Rua das Acácias, 100&quot;</span><span class="p">,</span>
+</span><span id="__span-7-11"><a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a><span class="w">  </span><span class="nt">&quot;cidade&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;São Paulo&quot;</span><span class="p">,</span>
+</span><span id="__span-7-12"><a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a><span class="w">  </span><span class="nt">&quot;estado&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;SP&quot;</span><span class="p">,</span>
+</span><span id="__span-7-13"><a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a><span class="w">  </span><span class="nt">&quot;cep&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;01234-567&quot;</span><span class="p">,</span>
+</span><span id="__span-7-14"><a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a><span class="w">  </span><span class="nt">&quot;data_cadastro&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ISODate(&#39;2023-03-15T00:00:00Z&#39;)&quot;</span><span class="p">,</span>
+</span><span id="__span-7-15"><a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a><span class="w">  </span><span class="nt">&quot;updated_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ISODate(&#39;2024-08-01T00:00:00Z&#39;)&quot;</span>
+</span><span id="__span-7-16"><a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a><span class="p">}</span>
+</span></code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-json highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="p">{</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span><span class="nt">&quot;_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ObjectId(&#39;...&#39;)&quot;</span><span class="p">,</span>
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">  </span><span class="nt">&quot;id_pedido&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">42</span><span class="p">,</span>
+</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">  </span><span class="nt">&quot;id_cliente&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">8123</span><span class="p">,</span>
+</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="w">  </span><span class="nt">&quot;data_pedido&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ISODate(&#39;2024-05-20T00:00:00Z&#39;)&quot;</span><span class="p">,</span>
+</span><span id="__span-8-6"><a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="w">  </span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;entregue&quot;</span><span class="p">,</span>
+</span><span id="__span-8-7"><a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="w">  </span><span class="nt">&quot;valor_total&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">459.90</span><span class="p">,</span>
+</span><span id="__span-8-8"><a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="w">  </span><span class="nt">&quot;id_cupom&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">311</span><span class="p">,</span>
+</span><span id="__span-8-9"><a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="w">  </span><span class="nt">&quot;updated_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ISODate(&#39;2024-06-02T00:00:00Z&#39;)&quot;</span>
+</span><span id="__span-8-10"><a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="p">}</span>
+</span></code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-json highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="p">{</span>
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span><span class="nt">&quot;_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ObjectId(&#39;...&#39;)&quot;</span><span class="p">,</span>
+</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">  </span><span class="nt">&quot;id_pedido&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">43</span><span class="p">,</span>
+</span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="w">  </span><span class="nt">&quot;id_cliente&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">277</span><span class="p">,</span>
+</span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="w">  </span><span class="nt">&quot;data_pedido&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ISODate(&#39;2025-01-10T00:00:00Z&#39;)&quot;</span><span class="p">,</span>
+</span><span id="__span-9-6"><a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="w">  </span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;processando&quot;</span><span class="p">,</span>
+</span><span id="__span-9-7"><a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="w">  </span><span class="nt">&quot;valor_total&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">1280.00</span><span class="p">,</span>
+</span><span id="__span-9-8"><a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="w">  </span><span class="nt">&quot;id_cupom&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span>
+</span><span id="__span-9-9"><a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a><span class="w">  </span><span class="nt">&quot;updated_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ISODate(&#39;2025-01-12T00:00:00Z&#39;)&quot;</span>
+</span><span id="__span-9-10"><a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a><span class="p">}</span>
+</span></code></pre></div>
+</div>
+</div>
+</div>
+<h2 id="validacao-de-schema">Validação de schema<a class="headerlink" href="#validacao-de-schema" title="Link permanente para esta seção">&para;</a></h2>
+<p>A definição machine-readable de cada coleção está em
+<a href="https://github.com/olucasoliverio/Engenharia_Dados_Final/tree/main/dataset/schemas"><code>dataset/schemas/</code></a>
+no formato <a href="https://www.mongodb.com/docs/manual/core/schema-validation/"><code>$jsonSchema</code></a> do
+MongoDB. Esses validadores são aplicados na <strong>criação</strong> das coleções por
+<code>carregar_mongo.py</code> (issues #8/#9) e podem ser desativados com <code>--no-validator</code>.</p>
+<div class="admonition tip">
+<p class="admonition-title">O que o validador garante</p>
+<ul>
+<li><strong>Campos obrigatórios</strong> via <code>required</code> (ex.: <code>id_cliente</code>, <code>nome</code>, <code>updated_at</code>).</li>
+<li><strong>Tipos BSON</strong> por campo — note <code>["int", "long"]</code> nos IDs, aceitando inteiros de
+  32 e 64 bits, e <code>["int", "long", "null"]</code> em <code>pedidos.id_cupom</code>.</li>
+<li><strong>Domínios fechados</strong> via <code>enum</code> (ex.: <code>genero</code> ∈ <code>M/F/Outro</code>; <code>status</code> do pedido).</li>
+<li><strong>Restrições de formato</strong> (ex.: <code>estado</code> com <code>minLength</code>/<code>maxLength</code> = 2).</li>
+</ul>
+</div>
+<p>Os exemplos abaixo são <strong>lidos diretamente dos arquivos no repositório</strong> (via
+<code>pymdownx.snippets</code>), então acompanham automaticamente qualquer alteração no código:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">clientes.schema.json</label><label for="__tabbed_3_2">pedidos.schema.json</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="language-json highlight"><span class="filename">dataset/schemas/clientes.schema.json</span><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="p">{</span>
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="w">  </span><span class="nt">&quot;$jsonSchema&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="w">    </span><span class="nt">&quot;bsonType&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;object&quot;</span><span class="p">,</span>
+</span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="w">    </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;clientes&quot;</span><span class="p">,</span>
+</span><span id="__span-10-5"><a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="w">    </span><span class="nt">&quot;required&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+</span><span id="__span-10-6"><a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="w">      </span><span class="s2">&quot;id_cliente&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;nome&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;email&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;cpf&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;telefone&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;data_nascimento&quot;</span><span class="p">,</span>
+</span><span id="__span-10-7"><a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="w">      </span><span class="s2">&quot;genero&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;logradouro&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;cidade&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;estado&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;cep&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;data_cadastro&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;updated_at&quot;</span>
+</span><span id="__span-10-8"><a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="w">    </span><span class="p">],</span>
+</span><span id="__span-10-9"><a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a><span class="w">    </span><span class="nt">&quot;properties&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-10-10"><a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a><span class="w">      </span><span class="nt">&quot;id_cliente&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;bsonType&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;int&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;long&quot;</span><span class="p">],</span><span class="w"> </span><span class="nt">&quot;description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Identificador único&quot;</span><span class="w"> </span><span class="p">},</span>
+</span><span id="__span-10-11"><a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a><span class="w">      </span><span class="nt">&quot;nome&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;bsonType&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;string&quot;</span><span class="w"> </span><span class="p">},</span>
+</span><span id="__span-10-12"><a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a><span class="w">      </span><span class="nt">&quot;email&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;bsonType&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;string&quot;</span><span class="w"> </span><span class="p">},</span>
+</span><span id="__span-10-13"><a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a><span class="w">      </span><span class="nt">&quot;cpf&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;bsonType&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;string&quot;</span><span class="w"> </span><span class="p">},</span>
+</span><span id="__span-10-14"><a id="__codelineno-10-14" name="__codelineno-10-14" href="#__codelineno-10-14"></a><span class="w">      </span><span class="nt">&quot;telefone&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;bsonType&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;string&quot;</span><span class="w"> </span><span class="p">},</span>
+</span><span id="__span-10-15"><a id="__codelineno-10-15" name="__codelineno-10-15" href="#__codelineno-10-15"></a><span class="w">      </span><span class="nt">&quot;data_nascimento&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;bsonType&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;date&quot;</span><span class="w"> </span><span class="p">},</span>
+</span><span id="__span-10-16"><a id="__codelineno-10-16" name="__codelineno-10-16" href="#__codelineno-10-16"></a><span class="w">      </span><span class="nt">&quot;genero&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;enum&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;M&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;F&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;Outro&quot;</span><span class="p">]</span><span class="w"> </span><span class="p">},</span>
+</span><span id="__span-10-17"><a id="__codelineno-10-17" name="__codelineno-10-17" href="#__codelineno-10-17"></a><span class="w">      </span><span class="nt">&quot;logradouro&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;bsonType&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;string&quot;</span><span class="w"> </span><span class="p">},</span>
+</span><span id="__span-10-18"><a id="__codelineno-10-18" name="__codelineno-10-18" href="#__codelineno-10-18"></a><span class="w">      </span><span class="nt">&quot;cidade&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;bsonType&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;string&quot;</span><span class="w"> </span><span class="p">},</span>
+</span><span id="__span-10-19"><a id="__codelineno-10-19" name="__codelineno-10-19" href="#__codelineno-10-19"></a><span class="w">      </span><span class="nt">&quot;estado&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;bsonType&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;string&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;minLength&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;maxLength&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="p">},</span>
+</span><span id="__span-10-20"><a id="__codelineno-10-20" name="__codelineno-10-20" href="#__codelineno-10-20"></a><span class="w">      </span><span class="nt">&quot;cep&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;bsonType&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;string&quot;</span><span class="w"> </span><span class="p">},</span>
+</span><span id="__span-10-21"><a id="__codelineno-10-21" name="__codelineno-10-21" href="#__codelineno-10-21"></a><span class="w">      </span><span class="nt">&quot;data_cadastro&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;bsonType&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;date&quot;</span><span class="w"> </span><span class="p">},</span>
+</span><span id="__span-10-22"><a id="__codelineno-10-22" name="__codelineno-10-22" href="#__codelineno-10-22"></a><span class="w">      </span><span class="nt">&quot;updated_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;bsonType&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;date&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Controle de carga incremental&quot;</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-10-23"><a id="__codelineno-10-23" name="__codelineno-10-23" href="#__codelineno-10-23"></a><span class="w">    </span><span class="p">}</span>
+</span><span id="__span-10-24"><a id="__codelineno-10-24" name="__codelineno-10-24" href="#__codelineno-10-24"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-10-25"><a id="__codelineno-10-25" name="__codelineno-10-25" href="#__codelineno-10-25"></a><span class="p">}</span>
+</span></code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-json highlight"><span class="filename">dataset/schemas/pedidos.schema.json</span><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="p">{</span>
+</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="w">  </span><span class="nt">&quot;$jsonSchema&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="w">    </span><span class="nt">&quot;bsonType&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;object&quot;</span><span class="p">,</span>
+</span><span id="__span-11-4"><a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="w">    </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;pedidos&quot;</span><span class="p">,</span>
+</span><span id="__span-11-5"><a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="w">    </span><span class="nt">&quot;required&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+</span><span id="__span-11-6"><a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a><span class="w">      </span><span class="s2">&quot;id_pedido&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;id_cliente&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;data_pedido&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;status&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;valor_total&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;updated_at&quot;</span>
+</span><span id="__span-11-7"><a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a><span class="w">    </span><span class="p">],</span>
+</span><span id="__span-11-8"><a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a><span class="w">    </span><span class="nt">&quot;properties&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-11-9"><a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a><span class="w">      </span><span class="nt">&quot;id_pedido&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;bsonType&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;int&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;long&quot;</span><span class="p">],</span><span class="w"> </span><span class="nt">&quot;description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Identificador único&quot;</span><span class="w"> </span><span class="p">},</span>
+</span><span id="__span-11-10"><a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a><span class="w">      </span><span class="nt">&quot;id_cliente&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;bsonType&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;int&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;long&quot;</span><span class="p">],</span><span class="w"> </span><span class="nt">&quot;description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Referência -&gt; clientes.id_cliente&quot;</span><span class="w"> </span><span class="p">},</span>
+</span><span id="__span-11-11"><a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a><span class="w">      </span><span class="nt">&quot;data_pedido&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;bsonType&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;date&quot;</span><span class="w"> </span><span class="p">},</span>
+</span><span id="__span-11-12"><a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a><span class="w">      </span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;enum&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;pendente&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;processando&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;enviado&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;entregue&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;cancelado&quot;</span><span class="p">]</span><span class="w"> </span><span class="p">},</span>
+</span><span id="__span-11-13"><a id="__codelineno-11-13" name="__codelineno-11-13" href="#__codelineno-11-13"></a><span class="w">      </span><span class="nt">&quot;valor_total&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;bsonType&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;double&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;int&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;long&quot;</span><span class="p">]</span><span class="w"> </span><span class="p">},</span>
+</span><span id="__span-11-14"><a id="__codelineno-11-14" name="__codelineno-11-14" href="#__codelineno-11-14"></a><span class="w">      </span><span class="nt">&quot;id_cupom&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;bsonType&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;int&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;long&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;null&quot;</span><span class="p">],</span><span class="w"> </span><span class="nt">&quot;description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Referência -&gt; cupons.id_cupom (nulo quando sem cupom)&quot;</span><span class="w"> </span><span class="p">},</span>
+</span><span id="__span-11-15"><a id="__codelineno-11-15" name="__codelineno-11-15" href="#__codelineno-11-15"></a><span class="w">      </span><span class="nt">&quot;updated_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;bsonType&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;date&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Controle de carga incremental&quot;</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-11-16"><a id="__codelineno-11-16" name="__codelineno-11-16" href="#__codelineno-11-16"></a><span class="w">    </span><span class="p">}</span>
+</span><span id="__span-11-17"><a id="__codelineno-11-17" name="__codelineno-11-17" href="#__codelineno-11-17"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-11-18"><a id="__codelineno-11-18" name="__codelineno-11-18" href="#__codelineno-11-18"></a><span class="p">}</span>
+</span></code></pre></div>
+</div>
+</div>
+</div>
+<h2 id="observacoes-sobre-integridade">Observações sobre integridade<a class="headerlink" href="#observacoes-sobre-integridade" title="Link permanente para esta seção">&para;</a></h2>
+<p>Os dados são simulados de forma independente por coleção, então <strong>não há garantia de
+consistência referencial nem aritmética</strong> na origem:</p>
+<ul>
+<li>as <strong>chaves estrangeiras são sorteadas</strong> no intervalo <code>1..15000</code> (ex.:
+  <code>random.randint(1, TOTAL)</code>), podendo apontar para qualquer documento existente — ou
+  para combinações sem sentido de negócio;</li>
+<li><code>pedidos.valor_total</code> é <strong>independente</strong> da soma de <code>itens_pedido.subtotal</code>;</li>
+<li><code>pagamentos.valor</code> é <strong>independente</strong> de <code>pedidos.valor_total</code>;</li>
+<li>o <code>updated_at</code> de algumas entidades (ex.: <code>produtos</code>) é sorteado em toda a janela, sem
+  vínculo com uma data de criação.</li>
+</ul>
+<div class="admonition warning">
+<p class="admonition-title">Tratamento nas camadas seguintes</p>
+<p>Essas inconsistências são <strong>esperadas</strong> em uma origem bruta. A validação de
+integridade referencial, a reconciliação aritmética e a deduplicação são
+responsabilidade das camadas <strong>Silver</strong> (limpeza/conformação) e <strong>Gold</strong>
+(modelo dimensional) do pipeline — não da origem.</p>
+</div>
+<h2 id="referencias">Referências<a class="headerlink" href="#referencias" title="Link permanente para esta seção">&para;</a></h2>
+<ul>
+<li><a href="https://www.mongodb.com/docs/">MongoDB — Documentação</a></li>
+<li><a href="https://www.mongodb.com/docs/manual/core/schema-validation/">Schema Validation (<code>$jsonSchema</code>)</a></li>
+<li><a href="https://www.mongodb.com/docs/manual/indexes/">Índices no MongoDB</a></li>
+<li><a href="https://faker.readthedocs.io/">Faker</a></li>
+<li>Página completa de <a href="../referencias/">referências</a></li>
+</ul>
+
+
+
+
+
+
+
+  
+  
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Voltar ao topo
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Rodapé" >
+        
+          
+          <a href="../arquitetura/" class="md-footer__link md-footer__link--prev" aria-label="Anterior: Visão geral">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Anterior
+              </span>
+              <div class="md-ellipsis">
+                Visão geral
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../mongodb_atlas/" class="md-footer__link md-footer__link--next" aria-label="Próximo: MongoDB Atlas (compartilhado)">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Próximo
+              </span>
+              <div class="md-ellipsis">
+                MongoDB Atlas (compartilhado)
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      &copy; 2026 Equipe Engenharia de Dados &mdash; Projeto Acadêmico (MIT)
+
+    </div>
+  
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+    <a href="https://github.com/olucasoliverio/Engenharia_Dados_Final" target="_blank" rel="noopener" title="Repositório no GitHub" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+      <div class="md-progress" data-md-component="progress" role="progressbar"></div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.instant.progress", "navigation.tracking", "navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.indexes", "navigation.top", "navigation.footer", "toc.follow", "search.suggest", "search.highlight", "search.share", "content.code.copy", "content.code.select", "content.code.annotate", "content.tabs.link", "content.tooltips", "content.action.edit", "content.action.view"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copiado para \u00e1rea de transfer\u00eancia", "clipboard.copy": "Copiar para \u00e1rea de transfer\u00eancia", "search.result.more.one": "Mais 1 nesta p\u00e1gina", "search.result.more.other": "Mais # nesta p\u00e1gina", "search.result.none": "Nenhum resultado encontrado", "search.result.one": "1 resultado encontrado", "search.result.other": "# resultados encontrados", "search.result.placeholder": "Digite para iniciar a busca", "search.result.term.missing": "Ausente", "select.version": "Selecione a vers\u00e3o"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="../javascripts/extra.js"></script>
+      
+    
+  </body>
+</html>
