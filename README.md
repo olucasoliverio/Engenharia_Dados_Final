@@ -14,6 +14,7 @@ Integrantes: **Guilherme Madalena · Gustavo Felisbino · Lucas Gaspar · Lucas 
 [![Delta Lake](https://img.shields.io/badge/Delta%20Lake-3.3-00ADD4?logo=databricks&logoColor=white)](https://delta.io/)
 [![MinIO](https://img.shields.io/badge/MinIO-S3-C72E49?logo=minio&logoColor=white)](https://min.io/)
 [![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![uv](https://img.shields.io/badge/uv-managed-DE5FE9?logo=uv&logoColor=white)](https://github.com/astral-sh/uv)
 [![MkDocs Material](https://img.shields.io/badge/Docs-MkDocs%20Material-526CFE?logo=materialformkdocs&logoColor=white)](https://olucasoliverio.github.io/Engenharia_Dados_Final/)
 [![Looker Studio](https://img.shields.io/badge/Dashboard-Looker%20Studio-4285F4?logo=googledatastudio&logoColor=white)](https://lookerstudio.google.com/reporting/24b9c057-5b46-46af-bff3-54688322858e)
 [![Licença MIT](https://img.shields.io/badge/Licença-MIT-green.svg)](LICENSE)
@@ -101,8 +102,14 @@ por `updated_at`.
 | Ferramenta | Notas |
 |---|---|
 | **Docker + Docker Compose** | Sobe MongoDB, MinIO, Airflow e Postgres |
-| **Python 3.11+** | Scripts locais (carga, export). Use um `venv` |
+| **Python 3.11+** | Scripts locais (carga, export) |
+| **[uv](https://github.com/astral-sh/uv)** (recomendado) | Gerencia o venv e instala as dependências — bem mais rápido que o `pip` |
 | **Git** | Clonar o repositório |
+
+> **uv ou pip?** Os comandos abaixo usam **uv** (recomendado). Sem uv, troque
+> `uv venv` por `python3 -m venv .venv` e `uv pip install` por `pip install` —
+> o `pyproject.toml` é padrão, então os dois funcionam. Instalar o uv:
+> `curl -LsSf https://astral.sh/uv/install.sh | sh`.
 
 > Os dados (`dataset/arquivos_csv/`) e a saída do dashboard (`gold_export/`) **não são
 > versionados** — são reproduzíveis pelos scripts.
@@ -122,8 +129,8 @@ cp .env.example .env            # ajuste credenciais se quiser
 ```bash
 docker compose up -d mongodb
 
-python3 -m venv .venv && source .venv/bin/activate
-pip install ".[dataset]"
+uv venv && source .venv/bin/activate
+uv pip install ".[dataset]"
 
 # gera os CSVs (se faltarem) e carrega as 10 coleções num passo só
 python dataset/scripts_py/carregar_mongo.py
@@ -142,7 +149,7 @@ bronze_to_silver → silver_to_gold`.
 
 ### 4. Exportar a Gold para o dashboard
 ```bash
-pip install ".[spark]"
+uv pip install ".[spark]"
 python scripts/exportar_gold.py     # gera gold_export/ (estrela + obt_vendas.csv)
 ```
 Importe `gold_export/obt_vendas.csv` no **Looker Studio**. Passo a passo, relações e as
@@ -216,7 +223,7 @@ Jupyter — uma narrativa navegável que complementa o MkDocs:
 | `09_execucao_pipeline` | Guia prático de execução |
 
 ```bash
-pip install ".[notebooks]"     # instala notebook + jupyterlab
+uv pip install ".[notebooks]"  # instala notebook + jupyterlab
 jupyter lab                    # abre o Jupyter no navegador (ou: jupyter notebook)
 ```
 Abra `notebooks/00_indice_documentacao.ipynb` para começar.

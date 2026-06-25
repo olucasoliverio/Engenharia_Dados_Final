@@ -173,9 +173,9 @@ consumidor pode lê-lo para descobrir a estrutura sem precisar do repositório.
 Instale a dependência do inicializador em um ambiente virtual:
 
 ```bash
-python3 -m venv .venv
+uv venv
 source .venv/bin/activate
-pip install ".[infra]"
+uv pip install ".[infra]"
 ```
 
 Exporte as variáveis do `.env` e execute:

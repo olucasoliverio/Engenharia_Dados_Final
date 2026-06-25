@@ -35,8 +35,8 @@ apresentação — que complementa as páginas deste site.
 ## Como abrir
 
 ```bash
-python3 -m venv .venv && source .venv/bin/activate
-pip install ".[notebooks]"     # instala notebook + jupyterlab
+uv venv && source .venv/bin/activate
+uv pip install ".[notebooks]"     # instala notebook + jupyterlab
 
 jupyter lab                    # abre no navegador (ou: jupyter notebook)
 ```
