@@ -165,6 +165,7 @@ python -m unittest discover -s tests -v
 ├── dataset/          # Geradores Faker, carregar_mongo e validadores ($jsonSchema)
 ├── config/           # Contratos das camadas (*_structure.json)
 ├── docs/             # Documentação MkDocs (publicada no gh-pages)
+├── notebooks/        # Documentação interativa em Jupyter (10 notebooks)
 ├── tests/            # Testes unitários (rodam no CI)
 ├── docker/           # Dockerfile.airflow
 ├── assets/           # Diagramas de arquitetura
@@ -196,32 +197,36 @@ One Page View no Looker Studio, consumindo o modelo da Gold:
 
 ---
 
+## 📓 Notebooks (Jupyter)
+
+A pasta `notebooks/` traz a **documentação interativa** do projeto em 10 notebooks
+Jupyter — uma narrativa navegável que complementa o MkDocs:
+
+| Notebook | Conteúdo |
+|---|---|
+| `00_indice_documentacao` | Índice / ponto de partida |
+| `01_visao_geral_projeto` | Visão geral do pipeline |
+| `02_estrutura_repositorio` | Organização do repositório |
+| `03_arquitetura_detalhada` | Arquitetura medalhão em detalhe |
+| `04_processos_negocio` | Processos de negócio |
+| `05_fluxo_dados` | Fluxo de dados ponta a ponta |
+| `06_banco_dados` | Camada de origem (MongoDB) |
+| `07_interfaces_apis` | Interfaces e APIs |
+| `08_infraestrutura` | Infraestrutura (Docker/MinIO/Airflow) |
+| `09_execucao_pipeline` | Guia prático de execução |
+
+```bash
+pip install ".[notebooks]"     # instala notebook + jupyterlab
+jupyter lab                    # abre o Jupyter no navegador (ou: jupyter notebook)
+```
+Abra `notebooks/00_indice_documentacao.ipynb` para começar.
+
+---
+
 ## 👥 Integrantes
 
 Guilherme Madalena · Gustavo Felisbino · Lucas Gaspar · Lucas Oliverio · Luiz Barros · Tiago Mazzuco
 
 ## 📄 Licença
 
-As páginas-fonte ficam em `docs/` e o `mkdocs.yml` na raiz. O diretório `site/`
-(saída do build) **não é versionado** — é gerado localmente e publicado no
-GitHub Pages.
-
-```bash
-pip install mkdocs
-mkdocs serve      # pré-visualização em http://127.0.0.1:8000
-mkdocs build      # gera site/ (local, ignorado pelo git)
-mkdocs gh-deploy  # publica no GitHub Pages
-```
-
-## Dashboard (Power BI)
-
-O dashboard consome o modelo dimensional da Gold. Como o Power BI não lê Delta
-no MinIO nativamente, exporte a Gold para CSV e importe no Power BI:
-
-```bash
-pip install ".[spark]"
-python scripts/exportar_gold.py   # gera gold_export/<tabela>.csv
-```
-
-Passo a passo (import, relações do esquema estrela e os 4 KPIs + 2 métricas) em
-[`docs/dashboard.md`](docs/dashboard.md).
+Distribuído sob a licença **MIT** — veja [LICENSE](LICENSE).
