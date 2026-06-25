@@ -27,8 +27,9 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-from pymongo import ASCENDING, MongoClient
-from pymongo.errors import PyMongoError
+# pymongo e importado sob demanda (lazy) dentro das funcoes que usam o driver,
+# para que outros modulos possam reutilizar so a config (ex.: COLECOES) sem
+# precisar do pymongo instalado.
 
 # --- Caminhos relativos ao repositorio ---------------------------------------
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -192,6 +193,8 @@ def carregar_validador(nome: str) -> dict | None:
 
 
 def carregar_colecao(db, nome: str, tipos: dict, usar_validador: bool) -> int:
+    from pymongo import ASCENDING
+
     csv_path = CSV_DIR / tipos["csv"]
     if not csv_path.exists():
         print(f"  ! CSV nao encontrado: {csv_path} — pulando")
@@ -271,6 +274,9 @@ def main() -> int:
     # Esconde a senha ao imprimir a URI.
     uri_segura = uri.split("@")[-1] if "@" in uri else uri
     print(f"Conectando em ...@{uri_segura} | banco: {db_nome}")
+
+    from pymongo import MongoClient
+    from pymongo.errors import PyMongoError
 
     try:
         client = MongoClient(uri, serverSelectionTimeoutMS=8000)

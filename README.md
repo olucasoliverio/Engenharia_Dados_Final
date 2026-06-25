@@ -309,37 +309,15 @@ mkdocs build      # gera site/ (local, ignorado pelo git)
 mkdocs gh-deploy  # publica no GitHub Pages
 ```
 
-## Documentação Interativa (Jupyter Notebooks)
+## Dashboard (Power BI)
 
-Além da documentação publicada via MkDocs, o projeto disponibiliza uma coleção de notebooks Jupyter para facilitar o estudo e compreensão da solução de forma guiada e interativa.
-
-Os notebooks apresentam a arquitetura, regras de negócio, fluxo de dados, banco de dados, integrações, infraestrutura e execução operacional do pipeline em uma sequência estruturada, servindo como material de onboarding e transferência de conhecimento.
-
-### Estrutura
-
-```text
-notebooks/
-├── 00_indice_documentacao.ipynb
-├── 01_visao_geral_projeto.ipynb
-├── 02_estrutura_repositorio.ipynb
-├── 03_arquitetura_detalhada.ipynb
-├── 04_processos_negocio.ipynb
-├── 05_fluxo_dados.ipynb
-├── 06_banco_dados.ipynb
-├── 07_interfaces_apis.ipynb
-├── 08_infraestrutura.ipynb
-└── 09_execucao_pipeline.ipynb
-```
-
-### Executando localmente
+O dashboard consome o modelo dimensional da Gold. Como o Power BI não lê Delta
+no MinIO nativamente, exporte a Gold para CSV e importe no Power BI:
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-
-pip install "[.notebooks]"
-
-python run jupyter lab
+pip install ".[spark]"
+python scripts/exportar_gold.py   # gera gold_export/<tabela>.csv
 ```
 
-Após abrir o Jupyter, navegue até o diretório `notebooks/` e execute os arquivos na ordem numérica.
+Passo a passo (import, relações do esquema estrela e os 4 KPIs + 2 métricas) em
+[`docs/dashboard.md`](docs/dashboard.md).
