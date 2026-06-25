@@ -115,7 +115,7 @@ def bronze_to_silver():
             "--run-id",
             "{{ run_id }}",
             "--logical-date",
-            "{{ logical_date }}",
+            "{{ dag_run.logical_date or dag_run.run_after }}",
             "--endpoint-url",
             SPARK_S3_ENDPOINT,
         ],
